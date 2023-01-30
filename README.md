@@ -1,5 +1,5 @@
 # EVM CFG
-A pretty fast and accurate CFG generator for EVM bytecode.
+A fast and accurate CFG generator for EVM bytecode using symbolic stack analysis.
 
 | | |
 | --- | --- |
