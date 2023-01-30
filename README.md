@@ -1,5 +1,17 @@
 # EVM CFG
-As I was writing this cfg tool a friend, @0xalpharush, pointed out to me that this paper had an interesting approach to CFG generation. I had been implementing nearly the exact same idea, but soon realized they had better ones, so this is ended up being a not very faithful re-implementation. Infinite loop prevention and detection is still an open ended problem in both approaches.
+A pretty fast and accurate CFG generator for EVM bytecode.
+
+| | |
+| --- | --- |
+| Contract | Time to Generate CFG |
+| [April CTF](https://kovan.etherscan.io/address/0x3a5a3bb5ec113fad3cc4e5d922192d14a78646b1#code) | 0.620 ms |
+| [WETH9](https://etherscan.io/address/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2) | 0.778 ms |
+| [Fun Reversing Challenge](https://github.com/paradigmxyz/paradigm-ctf-2022/tree/main/fun-reversing-challenge) | 1.64 ms |
+| [UniswapV2Router](https://etherscan.io/address/0x7a250d5630b4cf539739df2c5dacb4c659f2488d) | 10.85 ms |
+
+![image](./example.png)
+
+As I was writing this cfg tool a friend, @0xalpharush, pointed out to me that this paper had an interesting approach to CFG generation. I had been implementing nearly the exact same idea, but soon realized they had better methodologies, so this is ended up being a not very faithful re-implementation. Infinite loop prevention and detection is still an open ended problem in both approaches.
 
 Ethersolve: https://arxiv.org/pdf/2103.09113.pdf
 

@@ -107,7 +107,7 @@ pc107: PUSH2 256
 pc110: JUMP
 
 Stack size req: 0, sizeΔ: 0
-" fillcolor = "#703440"]
+"]
     11 [ label = "pc111: JUMPDEST
 pc112: PUSH1 64
 pc114: MLOAD
@@ -122,7 +122,7 @@ Entry->Op usage:
 	0->117:MSTORE:1
 Entry->Exit:
 	0->😵
-" fillcolor = "#703440"]
+"]
     12 [ label = "pc121: JUMPDEST
 pc122: PUSH1 64
 pc124: MLOAD
@@ -170,7 +170,7 @@ Entry->Op usage:
 	1->161:JUMP:0
 Entry->Exit:
 	0->😵
-" color = "teal" fillcolor = "#703440"]
+" color = "teal"]
     15 [ label = "pc162: JUMPDEST
 pc163: PUSH2 170
 pc166: PUSH2 580
@@ -182,7 +182,7 @@ Stack size req: 0, sizeΔ: 1
 pc171: STOP
 
 Stack size req: 0, sizeΔ: 0
-" color = "darkblue" fillcolor = "#703440"]
+" color = "darkblue"]
     17 [ label = "pc172: JUMPDEST
 pc173: PUSH1 0
 pc175: SLOAD
@@ -1085,7 +1085,7 @@ pc993: PUSH2 830
 pc996: JUMP
 
 Stack size req: 0, sizeΔ: 0
-" fillcolor = "#703440"]
+"]
     72 [ label = "pc997: JUMPDEST
 pc998: DUP2
 pc999: DUP2
@@ -1124,7 +1124,7 @@ Entry->Op usage:
 Entry->Exit:
 	0->1
 	1->😵
-" fillcolor = "#703440"]
+"]
     73 [ label = "pc1024: PUSH1 0
 pc1026: DUP1
 pc1027: REVERT
@@ -1255,7 +1255,7 @@ Entry->Op usage:
 Entry->Exit:
 	0->0
 	2->😵
-" fillcolor = "#703440"]
+"]
     82 [ label = "pc1116: PUSH1 0
 pc1118: DUP1
 pc1119: DUP2
@@ -1623,5 +1623,13 @@ Stack size req: 0, sizeΔ: 0
     88 -> 90 [ label = "True" color = "#9ece6a"]
     92 -> 93 [ label = "False" color = "#f7768e"]
     92 -> 94 [ label = "True" color = "#9ece6a"]
+    63 -> 71 [ ]
+    60 -> 72 [ ]
+    87 -> 10 [ ]
+    45 -> 11 [ ]
+    60 -> 81 [ ]
+    90 -> 14 [ ]
+    14 -> 11 [ ]
+    50 -> 16 [ ]
 
 }
