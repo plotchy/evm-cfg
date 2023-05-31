@@ -97,7 +97,7 @@ First, some timings. This tool is fast!
   - IIRC this features a rijndael based method? I recall it featured many many loops and bricked my computer when attempting the solve. The complexity of the looping is fun to see in the graph.
 <img width="100%" src="examples/fun_reversing_challenge.svg">
 
-[April](https://kovan.etherscan.io/address/0x3a5a3bb5ec113fad3cc4e5d922192d14a78646b1#code) by @brockelmore:
+April by @brockelmore:
 - This challenge allows you to input a value that acts as a pointer to jump to any location in the program. This type of jump is treated as *symbolic* and is quite difficult to manage a graph representation of when every jump is possible. 
   - Looking at the graph output, we can see that there are several instruction blocks that are fully detached from all control flow other than a possible symbolic jump.
     - Interestingly, the winning jumpdest is [hidden away in the contract metadata](https://twitter.com/plotchy/status/1618743147361873921)
