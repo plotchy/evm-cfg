@@ -1,0 +1,12 @@
+digraph G {
+    node [shape=box, style="filled, rounded", color="#565f89", fontcolor="#c0caf5", fontname="Helvetica", fillcolor="#24283b"];
+    edge [color="#414868", fontcolor="#c0caf5", fontname="Helvetica"];
+    bgcolor="#1a1b26";
+    0 [ label = "pc0: PUSH1 64
+pc2: PUSH1 128
+pc4: RETURN
+
+Stack size req: 0, sizeΔ: 0
+" color = "darkblue" shape = invhouse]
+
+}

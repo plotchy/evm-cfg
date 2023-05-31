@@ -98,6 +98,7 @@ pub fn opcode(code: u8) -> Opcode {
         0x59 => Opcode { name: String::from("MSIZE"), mingas: 2, inputs: 0, outputs: 1 },
         0x5a => Opcode { name: String::from("GAS"), mingas: 2, inputs: 0, outputs: 1 },
         0x5b => Opcode { name: String::from("JUMPDEST"), mingas: 1, inputs: 0, outputs: 0 },
+        0x5f => Opcode { name: String::from("PUSH0"), mingas: 2, inputs: 0, outputs: 1 },
         0x60 => Opcode { name: String::from("PUSH1"), mingas: 3, inputs: 0, outputs: 1 },
         0x61 => Opcode { name: String::from("PUSH2"), mingas: 3, inputs: 0, outputs: 1 },
         0x62 => Opcode { name: String::from("PUSH3"), mingas: 3, inputs: 0, outputs: 1 },

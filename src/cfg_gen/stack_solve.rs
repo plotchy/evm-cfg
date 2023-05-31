@@ -179,7 +179,7 @@ pub fn symbolic_cycle(
     let first_visit = (cfg_runner.map_to_instructionblock.get(&start_node).unwrap(), EdgeStack::default());
     unvisited_queue.push_front(first_visit);
 
-    println!("\nEntering symbolic cycle \n");
+    // println!("\nEntering symbolic cycle \n");
     while !unvisited_queue.is_empty() {
         let (current_block, current_stack) = unvisited_queue.pop_front().unwrap();
         let current_node = (current_block.start_pc, current_block.end_pc);
@@ -365,5 +365,5 @@ pub fn symbolic_cycle(
             }
         }
     }
-    println!("Done building CFG");
+    // println!("Done building CFG");
 }

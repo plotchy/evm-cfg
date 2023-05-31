@@ -1,0 +1,208 @@
+digraph G {
+    node [shape=box, style="filled, rounded", color="#565f89", fontcolor="#c0caf5", fontname="Helvetica", fillcolor="#24283b"];
+    edge [color="#414868", fontcolor="#c0caf5", fontname="Helvetica"];
+    bgcolor="#1a1b26"; 
+    61 [ label = "pc879: JUMPDEST
+pc880: PUSH1 0
+pc882: PUSH8 18446744073709551615
+pc891: DUP3
+pc892: GT
+pc893: ISZERO
+pc894: PUSH2 905
+pc897: JUMPI
+
+Stack size req: 1, sizeΔ: 1
+Entry->Op usage:
+	0->892:GT:0
+defaultΔ: 1
+"]
+
+    63 [ label = "pc905: JUMPDEST
+pc906: POP
+pc907: PUSH1 5
+pc909: SHL
+pc910: PUSH1 32
+pc912: ADD
+pc913: SWAP1
+pc914: JUMP
+Indirect!
+
+Stack size req: 3, sizeΔ: -2
+Entry->Op usage:
+	0->906:POP:0
+	1->909:SHL:1
+	2->914:JUMP:0
+Entry->Exit:
+	0->😵
+	1->😵
+	2->😵
+defaultΔ: -2
+" color = "teal"]
+
+    71 [ label = "pc992: JUMPDEST
+pc993: PUSH2 830
+pc996: JUMP
+
+Stack size req: 0, sizeΔ: 0
+"]
+    72 [ label = "pc997: JUMPDEST
+pc998: DUP2
+pc999: DUP2
+pc1000: MSTORE
+pc1001: PUSH1 5
+pc1003: SWAP2
+pc1004: DUP3
+pc1005: SHL
+pc1006: DUP5
+pc1007: ADD
+pc1008: DUP6
+pc1009: ADD
+pc1010: SWAP2
+pc1011: DUP6
+pc1012: DUP3
+pc1013: ADD
+pc1014: SWAP2
+pc1015: SWAP1
+pc1016: DUP10
+pc1017: DUP5
+pc1018: GT
+pc1019: ISZERO
+pc1020: PUSH2 1028
+pc1023: JUMPI
+
+Stack size req: 8, sizeΔ: 2
+Entry->Op usage:
+	0->1000:MSTORE:0
+	0->1013:ADD:0
+	1->1000:MSTORE:1
+	1->1005:SHL:1
+	3->1007:ADD:0
+	4->1009:ADD:0
+	4->1013:ADD:1
+	7->1018:GT:1
+Entry->Exit:
+	0->1
+	1->😵
+defaultΔ: 2
+"]
+    73 [ label = "pc1024: PUSH1 0
+pc1026: DUP1
+pc1027: REVERT
+
+Stack size req: 0, sizeΔ: 0
+" color = "red"]
+    74 [ label = "pc1028: JUMPDEST
+pc1029: DUP7
+pc1030: DUP7
+pc1031: ADD
+
+Stack size req: 7, sizeΔ: 1
+Entry->Op usage:
+	5->1031:ADD:0
+	6->1031:ADD:1
+defaultΔ: 1
+"]
+    75 [ label = "pc1032: JUMPDEST
+pc1033: DUP5
+pc1034: DUP2
+pc1035: LT
+pc1036: ISZERO
+pc1037: PUSH2 1168
+pc1040: JUMPI
+
+Stack size req: 5, sizeΔ: 0
+Entry->Op usage:
+	0->1035:LT:0
+	4->1035:LT:1
+"]
+    76 [ label = "pc1041: DUP1
+pc1042: CALLDATALOAD
+pc1043: DUP7
+pc1044: DUP2
+pc1045: GT
+pc1046: ISZERO
+pc1047: PUSH2 1056
+pc1050: JUMPI
+
+Stack size req: 6, sizeΔ: 1
+Entry->Op usage:
+	0->1042:CALLDATALOAD:0
+	5->1045:GT:1
+defaultΔ: 1
+"]
+    77 [ label = "pc1051: PUSH1 0
+pc1053: DUP1
+pc1054: DUP2
+pc1055: REVERT
+
+Stack size req: 0, sizeΔ: 1
+defaultΔ: 1
+" color = "red"]
+    78 [ label = "pc1056: JUMPDEST
+pc1057: DUP8
+pc1058: ADD
+pc1059: PUSH1 63
+pc1061: DUP2
+pc1062: ADD
+pc1063: DUP13
+pc1064: SGT
+pc1065: PUSH2 1074
+pc1068: JUMPI
+
+Stack size req: 12, sizeΔ: 0
+Entry->Op usage:
+	0->1058:ADD:1
+	7->1058:ADD:0
+	11->1064:SGT:0
+Entry->Exit:
+	0->😵
+"]
+    79 [ label = "pc1069: PUSH1 0
+pc1071: DUP1
+pc1072: DUP2
+pc1073: REVERT
+
+Stack size req: 0, sizeΔ: 1
+defaultΔ: 1
+" color = "red"]
+    80 [ label = "pc1074: JUMPDEST
+pc1075: DUP9
+pc1076: DUP2
+pc1077: ADD
+pc1078: CALLDATALOAD
+pc1079: PUSH1 64
+pc1081: PUSH2 1092
+pc1084: PUSH2 992
+pc1087: DUP4
+pc1088: PUSH2 879
+pc1091: JUMP
+
+Stack size req: 9, sizeΔ: 5
+Entry->Op usage:
+	0->1077:ADD:0
+	8->1077:ADD:1
+defaultΔ: 5
+"]
+    58 -> 60 [ label = "True" color = "#9ece6a"]
+    61 -> 63 [ label = "True" color = "#9ece6a"]
+    71 -> 58 [ ]
+    72 -> 73 [ label = "False" color = "#f7768e"]
+    72 -> 74 [ label = "True" color = "#9ece6a"]
+    74 -> 75 [ ]
+    75 -> 76 [ label = "False" color = "#f7768e"]
+    76 -> 77 [ label = "False" color = "#f7768e"]
+    76 -> 78 [ label = "True" color = "#9ece6a"]
+    78 -> 79 [ label = "False" color = "#f7768e"]
+    78 -> 80 [ label = "True" color = "#9ece6a"]
+    80 -> 61 [ ]
+    81 -> 83 [ label = "True" color = "#9ece6a"]
+    83 -> 84 [ ]
+    84 -> 85 [ label = "False" color = "#f7768e"]
+    84 -> 86 [ label = "True" color = "#9ece6a"]
+    85 -> 84 [ ]
+    86 -> 75 [ ]
+    63 -> 71 [ ]
+    60 -> 72 [ ]
+    60 -> 81 [ ]
+
+}

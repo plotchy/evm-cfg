@@ -1,0 +1,296 @@
+digraph G {
+    node [shape=box, style="filled, rounded", color="#565f89", fontcolor="#c0caf5", fontname="Helvetica", fillcolor="#24283b"];
+    edge [color="#414868", fontcolor="#c0caf5", fontname="Helvetica"];
+    bgcolor="#1a1b26";
+    0 [ label = "pc0: PUSH0 0
+pc1: CALLDATALOAD
+pc2: PUSH1 224
+pc4: SHR
+pc5: DUP1
+pc6: PUSH4 117300739
+pc11: EQ
+pc12: PUSH2 41
+pc15: JUMPI
+
+Stack size req: 0, sizeΔ: 1
+" shape = invhouse]
+    1 [ label = "pc16: DUP1
+pc17: PUSH4 799415512
+pc22: EQ
+pc23: PUSH2 68
+pc26: JUMPI
+
+Stack size req: 1, sizeΔ: 0
+Entry->Op usage:
+	0->22:EQ:1
+" fillcolor = "#703440"]
+    2 [ label = "pc27: DUP1
+pc28: PUSH4 1091967760
+pc33: EQ
+pc34: PUSH2 88
+pc37: JUMPI
+
+Stack size req: 1, sizeΔ: 0
+Entry->Op usage:
+	0->33:EQ:1
+" fillcolor = "#703440"]
+    3 [ label = "pc38: PUSH0 0
+pc39: PUSH0 0
+pc40: REVERT
+
+Stack size req: 0, sizeΔ: 0
+" color = "red" fillcolor = "#703440"]
+    4 [ label = "pc41: JUMPDEST
+pc42: PUSH1 32
+pc44: PUSH0 0
+pc45: MSTORE
+pc46: PUSH9 1408969854303624655976
+pc56: PUSH1 41
+pc58: MSTORE
+pc59: PUSH1 9
+pc61: PUSH1 32
+pc63: MSTORE
+pc64: PUSH1 96
+pc66: PUSH0 0
+pc67: RETURN
+
+Stack size req: 0, sizeΔ: 0
+" color = "darkblue" fillcolor = "#703440"]
+    5 [ label = "pc68: JUMPDEST
+pc69: PUSH1 4
+pc71: CALLDATALOAD
+pc72: PUSH0 0
+pc73: MSTORE
+pc74: NUMBER
+pc75: PUSH1 32
+pc77: MSTORE
+pc78: PUSH1 64
+pc80: PUSH0 0
+pc81: SHA3
+pc82: PUSH0 0
+pc83: MSTORE
+pc84: PUSH1 32
+pc86: PUSH0 0
+pc87: RETURN
+
+Stack size req: 0, sizeΔ: 0
+" color = "darkblue" fillcolor = "#703440"]
+    6 [ label = "pc88: JUMPDEST
+pc89: PUSH1 4
+pc91: CALLDATALOAD
+pc92: PUSH1 36
+pc94: CALLDATALOAD
+pc95: PUSH0 0
+pc96: PUSH0 0
+pc97: PUSH2 525
+pc100: JUMP
+
+Stack size req: 0, sizeΔ: 4
+" fillcolor = "#703440"]
+    7 [ label = "pc101: JUMPDEST
+pc102: PUSH1 1
+pc104: PUSH2 178
+pc107: JUMP
+
+Stack size req: 0, sizeΔ: 1
+" fillcolor = "#703440"]
+    8 [ label = "pc108: JUMPDEST
+pc109: PUSH2 543
+pc112: JUMPI
+
+Stack size req: 1, sizeΔ: -1
+Entry->Op usage:
+	0->112:JUMPI:1
+Entry->Exit:
+	0->😵
+" fillcolor = "#703440"]
+    9 [ label = "pc113: PUSH2 329
+pc116: JUMP
+
+Stack size req: 0, sizeΔ: 0
+" fillcolor = "#703440"]
+    10 [ label = "pc117: JUMPDEST
+pc118: DUP1
+pc119: PUSH2 249
+pc122: JUMP
+
+Stack size req: 1, sizeΔ: 1
+Entry->Exit:
+	0->0, 1
+" fillcolor = "#703440"]
+    11 [ label = "pc123: JUMPDEST
+pc124: PUSH0 0
+pc125: PUSH2 202
+pc128: JUMP
+
+Stack size req: 0, sizeΔ: 1
+" fillcolor = "#703440"]
+    12 [ label = "pc129: JUMPDEST
+pc130: PUSH2 301
+pc133: JUMPI
+
+Stack size req: 1, sizeΔ: -1
+Entry->Op usage:
+	0->133:JUMPI:1
+Entry->Exit:
+	0->😵
+" fillcolor = "#703440"]
+    13 [ label = "pc134: PUSH2 632
+pc137: JUMP
+
+Stack size req: 0, sizeΔ: 0
+" fillcolor = "#703440"]
+    14 [ label = "pc138: JUMPDEST
+pc139: ADDMOD
+pc140: PUSH2 455
+pc143: JUMP
+
+Stack size req: 3, sizeΔ: -2
+Entry->Op usage:
+	0->139:ADDMOD:0
+	1->139:ADDMOD:1
+	2->139:ADDMOD:2
+Entry->Exit:
+	0->😵
+	1->😵
+	2->😵
+" fillcolor = "#703440"]
+    15 [ label = "pc144: JUMPDEST
+pc145: PUSH2 301
+pc148: JUMPI
+
+Stack size req: 1, sizeΔ: -1
+Entry->Op usage:
+	0->148:JUMPI:1
+Entry->Exit:
+	0->😵
+" fillcolor = "#703440"]
+    16 [ label = "pc149: PUSH2 585
+pc152: JUMP
+
+Stack size req: 0, sizeΔ: 0
+" fillcolor = "#703440"]
+    17 [ label = "pc153: JUMPDEST
+pc154: PUSH1 2
+pc156: PUSH2 230
+pc159: JUMP
+
+Stack size req: 0, sizeΔ: 1
+" fillcolor = "#703440"]
+    18 [ label = "pc160: JUMPDEST
+pc161: MSTORE
+pc162: PUSH2 435
+pc165: JUMP
+
+Stack size req: 2, sizeΔ: -2
+Entry->Op usage:
+	0->161:MSTORE:0
+	1->161:MSTORE:1
+Entry->Exit:
+	0->😵
+	1->😵
+" fillcolor = "#703440"]
+    19 [ label = "pc166: JUMPDEST
+pc167: DUP1
+pc168: PUSH2 242
+pc171: JUMP
+
+Stack size req: 1, sizeΔ: 1
+Entry->Exit:
+	0->0, 1
+" fillcolor = "#703440"]
+    20 [ label = "pc172: JUMPDEST
+pc173: DUP3
+pc174: PUSH2 276
+pc177: JUMP
+
+Stack size req: 3, sizeΔ: 1
+Entry->Exit:
+	2->0, 3
+" fillcolor = "#703440"]
+    21 [ label = "pc178: JUMPDEST
+pc179: PUSH0 0
+pc180: PUSH2 160
+pc183: JUMP
+
+Stack size req: 0, sizeΔ: 1
+" fillcolor = "#703440"]
+    22 [ label = "pc184: JUMPDEST
+pc185: ADD
+pc186: PUSH2 196
+pc189: JUMP
+
+Stack size req: 2, sizeΔ: -1
+Entry->Op usage:
+	0->185:ADD:0
+	1->185:ADD:1
+Entry->Exit:
+	0->😵
+	1->😵
+" fillcolor = "#703440"]
+    23 [ label = "pc190: JUMPDEST
+pc191: SWAP2
+pc192: PUSH2 340
+pc195: JUMP
+
+Stack size req: 3, sizeΔ: 0
+Entry->Exit:
+	0->2
+	2->0
+" fillcolor = "#703440"]
+    24 [ label = "pc196: JUMPDEST
+pc197: SWAP1
+pc198: PUSH2 449
+pc201: JUMP
+
+Stack size req: 2, sizeΔ: 0
+Entry->Exit:
+	0->1
+	1->0
+" fillcolor = "#703440"]
+    25 [ label = "pc202: JUMPDEST
+pc203: RETURN
+
+Stack size req: 2, sizeΔ: -2
+Entry->Op usage:
+	0->203:RETURN:0
+	1->203:RETURN:1
+Entry->Exit:
+	0->😵
+	1->😵
+" color = "darkblue" fillcolor = "#703440"]
+    26 [ label = "pc204: JUMPDEST
+pc205: PUSH1 1
+pc207: PUSH2 236
+pc210: JUMP
+
+Stack size req: 0, sizeΔ: 1
+" fillcolor = "#703440"]
+    27 [ label = "pc211: JUMPDEST
+pc212: PUSH1 16
+pc214: PUSH2 264
+pc217: JUMP
+
+Stack size req: 0, sizeΔ: 1
+" fillcolor = "#703440"]
+    28 [ label = "pc218: JUMPDEST
+pc219: DUP4
+pc220: PUSH2 423
+pc223: JUMP
+
+Stack size req: 4, sizeΔ: 1
+Entry->Exit:
+	3->0, 4
+" fillcolor = "#703440"]
+    29 [ label = "pc224: JUMPDEST
+pc225: SWAP4
+pc226: PUSH2 381
+pc229: JUMP
+
+Stack size req: 5, sizeΔ: 0
+Entry->Exit:
+	0->4
+	4->0
+" fillcolor = "#703440"]
+
+}

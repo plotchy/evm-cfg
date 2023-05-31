@@ -83,6 +83,7 @@ impl<'main> CFGRunner<'main> {
     }
 
     pub fn form_basic_connections(&mut self) {
+        let last_pc_total = self.bytecode.len() as u16;
         /*
         There are 4 cases of edges that we can connect from basic static analysis:
         1. Jumpi false
@@ -107,8 +108,13 @@ impl<'main> CFGRunner<'main> {
             if last_op_code == 0x57 {
                 // Jumpi false
                 let next_pc = end_pc + 1;
-                let next_node = self.get_node_from_pc(next_pc);
-                self.cfg_dag.add_edge((start_pc, end_pc), next_node, Edges::ConditionFalse);
+                if next_pc >= last_pc_total {
+                    // continue;
+                } else {
+                    let next_node = self.get_node_from_pc(next_pc);
+                    self.cfg_dag.add_edge((start_pc, end_pc), next_node, Edges::ConditionFalse);
+                }
+                
             } 
             if instruction_block.indirect_jump.is_none() && direct_push_val.is_some() {
                 // we know this is a direct jump
