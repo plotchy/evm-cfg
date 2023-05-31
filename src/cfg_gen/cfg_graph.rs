@@ -83,7 +83,6 @@ impl<'main> CFGRunner<'main> {
     }
 
     pub fn form_basic_connections(&mut self) {
-        let last_pc_total = self.bytecode.len() as u16;
         /*
         There are 4 cases of edges that we can connect from basic static analysis:
         1. Jumpi false
@@ -92,6 +91,11 @@ impl<'main> CFGRunner<'main> {
         4. Block ender is a basic instruction (connect to next pc)
             - this happens when a block is broken up by a jumpdest
         */
+
+        // get last pc in bytecode, this is done by iterating over the instruction blocks and finding the largest end_pc
+        let last_pc_total = self.map_to_instructionblock.iter().map(|((_entry_pc, _exit_pc), instruction_block)| {
+            instruction_block.end_pc
+        }).max().unwrap();
 
         // We need to iterate over each of the nodes in the graph, and check the end_pc of the (start_pc, end_pc) node
         for ((_entry_pc, _exit_pc), instruction_block) in self.map_to_instructionblock.iter() {
@@ -138,9 +142,12 @@ impl<'main> CFGRunner<'main> {
             if !BLOCK_ENDERS_U8.contains(&last_op_code) && super::opcode(last_op_code).name != "unknown" {
                 // Block ender is a basic instruction, but not exiting
                 let next_pc = end_pc + 1;
-                if self.bytecode.len() < next_pc as usize {
+                
+                if next_pc >= last_pc_total {
                     continue;
                 }
+                println!("next_pc: {}, last_pc_total: {}", next_pc, last_pc_total);
+
                 let next_node = self.get_node_from_pc(next_pc);
                 self.cfg_dag.add_edge((start_pc, end_pc), next_node, Edges::Jump);
             }

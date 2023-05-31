@@ -39,6 +39,12 @@ dot -Tsvg ./examples/cfg_weth.dot -o examples/weth9.svg;
 open examples/weth9.svg;
 ```
 
+To generate bytecode from a given solidity file, you can use the following:
+```bash
+solc <path_to_file> --bin-runtime --no-cbor-metadata --optimize --via-ir
+```
+- This will produce the optimized runtime bytecode without the excess metadata attached.
+
 
 ## How It Works In Phases:
 ### Disassembly

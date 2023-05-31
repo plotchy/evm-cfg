@@ -45,6 +45,15 @@ struct Args {
 fn main() {
     let args = Args::parse();
     let path_string = args.path_or_bytecode;
+    // check if path ends with .sol, if so, tell user to use solc to get bytecode and exit
+    if path_string.ends_with(".sol") {
+        println!("Use solc to get bytecode from solidity source files. ie:");
+        println!("   `solc {} --bin-runtime --no-cbor-metadata --optimize --via-ir`", &path_string);
+        println!("then run this tool on the resulting bytecode");
+        println!("   `evm_cfg <bytecode>`");
+        std::process::exit(1);
+    }
+    
     // check if path, if so read file, else use as bytecode
     let bytecode_string = std::fs::read_to_string(&path_string).unwrap_or(path_string);
 

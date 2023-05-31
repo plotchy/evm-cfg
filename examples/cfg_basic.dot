@@ -1,0 +1,171 @@
+digraph G {
+    node [shape=box, style="filled, rounded", color="#565f89", fontcolor="#c0caf5", fontname="Helvetica", fillcolor="#24283b"];
+    edge [color="#414868", fontcolor="#c0caf5", fontname="Helvetica"];
+    bgcolor="#1a1b26";
+    0 [ label = "pc0: PUSH1 0
+pc2: DUP1
+pc3: SLOAD
+pc4: SWAP1
+pc5: DUP2
+pc6: PUSH1 15
+pc8: JUMPI
+
+Stack size req: 0, sizeΔ: 2
+" shape = invhouse]
+    1 [ label = "pc9: PUSH1 1
+pc11: SWAP2
+pc12: POP
+pc13: SSTORE
+pc14: STOP
+
+Stack size req: 2, sizeΔ: -2
+Entry->Op usage:
+	0->13:SSTORE:0
+	1->12:POP:0
+Entry->Exit:
+	0->😵
+	1->😵
+" color = "darkblue"]
+    2 [ label = "pc15: JUMPDEST
+pc16: PUSH1 1
+pc18: SWAP2
+pc19: DUP3
+pc20: SUB
+pc21: PUSH1 101
+pc23: JUMPI
+
+Stack size req: 2, sizeΔ: 0
+Entry->Op usage:
+	1->20:SUB:1
+Entry->Exit:
+	1->😵
+"]
+    3 [ label = "pc24: DUP1
+
+Stack size req: 1, sizeΔ: 1
+Entry->Exit:
+	0->0, 1
+"]
+    4 [ label = "pc25: JUMPDEST
+pc26: PUSH1 10
+pc28: DUP2
+pc29: LT
+pc30: PUSH1 34
+pc32: JUMPI
+
+Stack size req: 1, sizeΔ: 0
+Entry->Op usage:
+	0->29:LT:0
+"]
+    5 [ label = "pc33: STOP
+
+Stack size req: 0, sizeΔ: 0
+" color = "darkblue"]
+    6 [ label = "pc34: JUMPDEST
+pc35: DUP3
+pc36: SLOAD
+pc37: DUP2
+pc38: DUP2
+pc39: ADD
+pc40: DUP1
+pc41: SWAP2
+pc42: GT
+pc43: PUSH1 81
+pc45: JUMPI
+
+Stack size req: 3, sizeΔ: 1
+Entry->Op usage:
+	0->39:ADD:1
+	2->36:SLOAD:0
+"]
+    7 [ label = "pc46: DUP4
+pc47: SSTORE
+pc48: PUSH1 0
+pc50: NOT
+pc51: DUP2
+pc52: EQ
+pc53: PUSH1 61
+pc55: JUMPI
+
+Stack size req: 4, sizeΔ: -1
+Entry->Op usage:
+	0->47:SSTORE:1
+	1->52:EQ:0
+	3->47:SSTORE:0
+Entry->Exit:
+	0->😵
+"]
+    8 [ label = "pc56: DUP3
+pc57: ADD
+pc58: PUSH1 25
+pc60: JUMP
+
+Stack size req: 3, sizeΔ: 0
+Entry->Op usage:
+	0->57:ADD:1
+	2->57:ADD:0
+Entry->Exit:
+	0->😵
+"]
+    9 [ label = "pc61: JUMPDEST
+pc62: PUSH4 1313373041
+pc67: PUSH1 224
+pc69: SHL
+pc70: DUP3
+pc71: MSTORE
+pc72: PUSH1 17
+pc74: PUSH1 4
+pc76: MSTORE
+pc77: PUSH1 36
+pc79: DUP3
+pc80: REVERT
+
+Stack size req: 2, sizeΔ: 0
+Entry->Op usage:
+	1->71:MSTORE:0
+	1->80:REVERT:0
+" color = "red"]
+    10 [ label = "pc81: JUMPDEST
+pc82: PUSH4 1313373041
+pc87: PUSH1 224
+pc89: SHL
+pc90: DUP4
+pc91: MSTORE
+pc92: PUSH1 17
+pc94: PUSH1 4
+pc96: MSTORE
+pc97: PUSH1 36
+pc99: DUP4
+pc100: REVERT
+
+Stack size req: 3, sizeΔ: 0
+Entry->Op usage:
+	2->91:MSTORE:0
+	2->100:REVERT:0
+" color = "red"]
+    11 [ label = "pc101: JUMPDEST
+pc102: DUP1
+pc103: SSTORE
+pc104: STOP
+
+Stack size req: 1, sizeΔ: -1
+Entry->Op usage:
+	0->103:SSTORE:1
+	0->103:SSTORE:0
+Entry->Exit:
+	0->😵
+" color = "darkblue"]
+    0 -> 1 [ label = "False" color = "#f7768e"]
+    0 -> 2 [ label = "True" color = "#9ece6a"]
+    2 -> 3 [ label = "False" color = "#f7768e"]
+    2 -> 11 [ label = "True" color = "#9ece6a"]
+    3 -> 4 [ ]
+    4 -> 5 [ label = "False" color = "#f7768e"]
+    4 -> 6 [ label = "True" color = "#9ece6a"]
+    6 -> 7 [ label = "False" color = "#f7768e"]
+    6 -> 10 [ label = "True" color = "#9ece6a"]
+    7 -> 8 [ label = "False" color = "#f7768e"]
+    7 -> 9 [ label = "True" color = "#9ece6a"]
+    8 -> 4 [ ]
+
+}
