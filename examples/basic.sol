@@ -1,5 +1,8 @@
+
+
 pragma solidity ^0.8.19;
-contract ez{
+
+contract LoadAndLoop {
     uint a;
     uint b;
     fallback() external payable{

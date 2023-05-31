@@ -1,5 +1,9 @@
 # EVM CFG
-A fast and accurate CFG generator for EVM bytecode using symbolic stack analysis. View the [graph visuals](#example-outputs) below.
+A fast and accurate CFG generator for EVM bytecode using symbolic stack analysis. View extra [graph visuals](#example-outputs) below.
+<p align="center">
+<img width="60%" src="examples/basic_code.svg">
+<img width="25%" src="examples/basic.svg">
+</p>
 
 
 ## Installation
