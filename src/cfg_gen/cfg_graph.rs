@@ -146,7 +146,7 @@ impl<'main> CFGRunner<'main> {
                 if next_pc >= last_pc_total {
                     continue;
                 }
-                println!("next_pc: {}, last_pc_total: {}", next_pc, last_pc_total);
+                // println!("next_pc: {}, last_pc_total: {}", next_pc, last_pc_total);
 
                 let next_node = self.get_node_from_pc(next_pc);
                 self.cfg_dag.add_edge((start_pc, end_pc), next_node, Edges::Jump);
