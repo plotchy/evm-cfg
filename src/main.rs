@@ -120,7 +120,6 @@ fn main() {
             }
         }
     };
-    println!("bytecode: {}, len {}", &bytecode_string, bytecode_string.len());
     let bytecode_vec = hex::decode(&bytecode_string).expect("bad hex");
 
     // DISASSEMBLY
