@@ -57,6 +57,9 @@ fn main() {
     // check if path, if so read file, else use as bytecode
     let bytecode_string = std::fs::read_to_string(&path_string).unwrap_or(path_string);
 
+    // sanitize bytecode string from newlines/spaces/etc
+    let bytecode_string = bytecode_string.replace("\n", "").replace(" ", "").replace("\r", "");
+
     // remove 0x prefix if present
     let bytecode_string = if bytecode_string.starts_with("0x") {
         bytecode_string[2..].to_string()
@@ -117,7 +120,7 @@ fn main() {
             }
         }
     };
-
+    println!("bytecode: {}, len {}", &bytecode_string, bytecode_string.len());
     let bytecode_vec = hex::decode(&bytecode_string).expect("bad hex");
 
     // DISASSEMBLY
