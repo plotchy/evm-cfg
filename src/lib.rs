@@ -1,5 +1,3 @@
-
-
 #[derive(Debug, Clone, Copy)]
 pub struct OutputHandler {
     pub show_timings: bool,
