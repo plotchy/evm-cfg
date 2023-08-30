@@ -60,14 +60,11 @@ fn main() {
     let bytecode_string = std::fs::read_to_string(&path_string).unwrap_or(path_string);
 
     // sanitize bytecode string from newlines/spaces/etc
-    let bytecode_string = bytecode_string
-        .replace("\n", "")
-        .replace(" ", "")
-        .replace("\r", "");
+    let bytecode_string = bytecode_string.replace(['\n', ' ', '\r'], "");
 
     // remove 0x prefix if present
-    let bytecode_string = if bytecode_string.starts_with("0x") {
-        bytecode_string[2..].to_string()
+    let bytecode_string = if let Some(stripped) = bytecode_string.strip_prefix("0x") {
+        stripped.to_string()
     } else {
         bytecode_string
     };
@@ -94,21 +91,18 @@ fn main() {
             show_basic_connections: true,
             show_bare_nodes: true,
             show_jump_dests: true,
-            ..Default::default()
         },
         11 => OutputHandler {
             show_timings: true,
             show_basic_connections: true,
             show_bare_nodes: true,
             show_jump_dests: true,
-            ..Default::default()
         },
         _ => OutputHandler {
             show_timings: true,
             show_basic_connections: true,
             show_bare_nodes: true,
             show_jump_dests: true,
-            ..Default::default()
         },
     };
     let bytecode_vec = hex::decode(&bytecode_string).expect("bad hex");

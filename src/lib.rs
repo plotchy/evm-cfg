@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct OutputHandler {
     pub show_timings: bool,
     pub show_jump_dests: bool,
@@ -18,17 +18,6 @@ impl OutputHandler {
             show_jump_dests,
             show_bare_nodes,
             show_basic_connections,
-        }
-    }
-}
-
-impl Default for OutputHandler {
-    fn default() -> Self {
-        Self {
-            show_timings: false,
-            show_jump_dests: false,
-            show_bare_nodes: false,
-            show_basic_connections: false,
         }
     }
 }

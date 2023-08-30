@@ -1413,6 +1413,7 @@ impl InstructionBlock {
         };
     }
 
+    #[allow(clippy::type_complexity)]
     pub fn n_in_m_out(
         n: u8,
         m: u8,
