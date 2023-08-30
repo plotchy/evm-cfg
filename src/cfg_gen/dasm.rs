@@ -2,7 +2,6 @@ use crate::cfg_gen::*;
 use ethers::types::U256;
 use fnv::FnvBuildHasher;
 use itertools::Itertools;
-use revm::opcode::*;
 use std::{
     collections::{HashMap, HashSet, VecDeque},
     fmt::Debug,
