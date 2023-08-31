@@ -64,12 +64,6 @@ fn main() {
     // sanitize bytecode string from newlines/spaces/etc
     let bytecode_string = bytecode_string.replace(['\n', ' ', '\r'], "");
 
-    // remove 0x prefix if present
-    let bytecode_string = if let Some(stripped) = bytecode_string.strip_prefix("0x") {
-        stripped.to_string()
-    } else {
-        bytecode_string
-    };
     let verbosity = args.verbosity;
     let output_handler: OutputHandler = match verbosity {
         0 => OutputHandler::default(),
