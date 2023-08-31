@@ -1,17 +1,18 @@
-use std::{io::Write, collections::{BTreeMap, HashSet}};
-use crate::cfg_gen::{*, dasm::InstructionBlock};
-use revm::Bytecode;
-use fnv::FnvBuildHasher;
+use crate::cfg_gen::{dasm::InstructionBlock, *};
 use clap::{ArgAction, Parser, ValueHint};
 use evm_cfg::OutputHandler;
+use fnv::FnvBuildHasher;
+use revm::Bytecode;
+use std::{
+    collections::{BTreeMap, HashSet},
+    io::Write,
+};
 
 pub mod cfg_gen;
-
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-
     /// Either a path to a file containing the bytecode or the bytecode itself
     #[clap(value_hint = ValueHint::FilePath, value_name = "PATH or BYTECODE")]
     pub path_or_bytecode: String,
@@ -40,85 +41,69 @@ struct Args {
     pub verbosity: u8,
 }
 
-
-
 fn main() {
     let args = Args::parse();
     let path_string = args.path_or_bytecode;
     // check if path ends with .sol, if so, tell user to use solc to get bytecode and exit
     if path_string.ends_with(".sol") {
         println!("Use solc to get bytecode from solidity source files. ie:");
-        println!("   `solc {} --bin-runtime --no-cbor-metadata --optimize --via-ir`", &path_string);
+        println!(
+            "   `solc {} --bin-runtime --no-cbor-metadata --optimize --via-ir`",
+            &path_string
+        );
         println!("then run this tool on the resulting bytecode");
         println!("   `evm_cfg <bytecode>`");
         std::process::exit(1);
     }
-    
+
     // check if path, if so read file, else use as bytecode
     let bytecode_string = std::fs::read_to_string(&path_string).unwrap_or(path_string);
 
     // sanitize bytecode string from newlines/spaces/etc
-    let bytecode_string = bytecode_string.replace("\n", "").replace(" ", "").replace("\r", "");
+    let bytecode_string = bytecode_string.replace(['\n', ' ', '\r'], "");
 
     // remove 0x prefix if present
-    let bytecode_string = if bytecode_string.starts_with("0x") {
-        bytecode_string[2..].to_string()
+    let bytecode_string = if let Some(stripped) = bytecode_string.strip_prefix("0x") {
+        stripped.to_string()
     } else {
         bytecode_string
     };
     let verbosity = args.verbosity;
     let output_handler: OutputHandler = match verbosity {
-        0 => {
-            OutputHandler::default()
+        0 => OutputHandler::default(),
+        1 => OutputHandler {
+            show_timings: true,
+            ..Default::default()
         },
-        1 => {
-            OutputHandler {
-                show_timings: true,
-                ..Default::default()
-            }
+        2 => OutputHandler {
+            show_timings: true,
+            show_basic_connections: true,
+            ..Default::default()
         },
-        2 => {
-            OutputHandler {
-                show_timings: true,
-                show_basic_connections: true,
-                ..Default::default()
-            }
+        3 => OutputHandler {
+            show_timings: true,
+            show_basic_connections: true,
+            show_bare_nodes: true,
+            ..Default::default()
         },
-        3 => {
-            OutputHandler {
-                show_timings: true,
-                show_basic_connections: true,
-                show_bare_nodes: true,
-                ..Default::default()
-            }
+        4 => OutputHandler {
+            show_timings: true,
+            show_basic_connections: true,
+            show_bare_nodes: true,
+            show_jump_dests: true,
         },
-        4 => {
-            OutputHandler {
-                show_timings: true,
-                show_basic_connections: true,
-                show_bare_nodes: true,
-                show_jump_dests: true,
-                ..Default::default()
-            }
+        11 => OutputHandler {
+            show_timings: true,
+            show_basic_connections: true,
+            show_bare_nodes: true,
+            show_jump_dests: true,
         },
-        11 => {
-            OutputHandler {
-                show_timings: true,
-                show_basic_connections: true,
-                show_bare_nodes: true,
-                show_jump_dests: true,
-                ..Default::default()
-            }
+        _ => OutputHandler {
+            show_timings: true,
+            show_basic_connections: true,
+            show_bare_nodes: true,
+            show_jump_dests: true,
         },
-        _ => {
-            OutputHandler {
-                show_timings: true,
-                show_basic_connections: true,
-                show_bare_nodes: true,
-                show_jump_dests: true,
-                ..Default::default()
-            }
-        }
     };
     let bytecode_vec = hex::decode(&bytecode_string).expect("bad hex");
 
@@ -130,18 +115,23 @@ fn main() {
     let revm_jumptable = revm_bytecode.jumptable();
 
     // convert jumptable to Hashset of valid jumpdests. 2byte key means Fnv is fast
-    let set_all_valid_jumpdests: HashSet<u16, FnvBuildHasher> = revm_jumptable.analysis.iter().enumerate().filter_map(|(pc,data)| {
-        if data.is_jump() {
-            Some(pc as u16)
-        } else {
-            None
-        }
-    }).collect();
+    let set_all_valid_jumpdests: HashSet<u16, FnvBuildHasher> = revm_jumptable
+        .analysis
+        .iter()
+        .enumerate()
+        .filter_map(|(pc, data)| {
+            if data.is_jump() {
+                Some(pc as u16)
+            } else {
+                None
+            }
+        })
+        .collect();
 
     if output_handler.show_jump_dests {
         println!("all valid jumpdests: {:?}", &set_all_valid_jumpdests);
     }
-    
+
     // convert bytecode to instruction blocks
     let mut instruction_blocks = dasm::disassemble(&bytecode_vec);
 
@@ -151,19 +141,21 @@ fn main() {
     }
 
     // QoL: map cfg-nodes to instruction blocks for easy lookup rather than stuffing graph with instruction block info as node weights
-    let mut map_to_instructionblocks: BTreeMap<(u16, u16), InstructionBlock> = instruction_blocks.iter().map(|block| {
-        ((block.start_pc, block.end_pc), block.clone())
-    }).collect();
+    let mut map_to_instructionblocks: BTreeMap<(u16, u16), InstructionBlock> = instruction_blocks
+        .iter()
+        .map(|block| ((block.start_pc, block.end_pc), block.clone()))
+        .collect();
 
     // create initial cfg using only nodes
-    let mut cfg_runner = cfg_gen::cfg_graph::CFGRunner::new(bytecode_vec, &mut map_to_instructionblocks);
+    let mut cfg_runner =
+        cfg_gen::cfg_graph::CFGRunner::new(bytecode_vec, &mut map_to_instructionblocks);
     if output_handler.show_bare_nodes {
         // write out the cfg with bare nodes only
         let mut file = std::fs::File::create("cfg_nodes_only.dot").expect("bad fs open");
-        file.write_all(cfg_runner.cfg_dot_str_with_blocks().as_bytes()).expect("bad file write");
+        file.write_all(cfg_runner.cfg_dot_str_with_blocks().as_bytes())
+            .expect("bad file write");
     }
 
-    
     // form basic edges based on direct pushes leading into jumps, false edges of jumpis, and pc+1 when no jump is used
     cfg_runner.form_basic_connections();
     // trim instruction blocks from graph that have no incoming edges and do not lead the block with a jumpdest
@@ -175,17 +167,18 @@ fn main() {
     if output_handler.show_basic_connections {
         // write out the cfg with basic connections only
         let mut file = std::fs::File::create("cfg_basic_connections.dot").expect("bad fs open");
-        file.write_all(cfg_runner.cfg_dot_str_with_blocks().as_bytes()).expect("bad file write");
+        file.write_all(cfg_runner.cfg_dot_str_with_blocks().as_bytes())
+            .expect("bad file write");
     }
-
-
-
-
 
     let stack_solve_time = std::time::Instant::now();
     // find new edges based on indirect jumps
     let label_symbolic_jumps = false;
-    stack_solve::symbolic_cycle(&mut cfg_runner, &set_all_valid_jumpdests, label_symbolic_jumps);
+    stack_solve::symbolic_cycle(
+        &mut cfg_runner,
+        &set_all_valid_jumpdests,
+        label_symbolic_jumps,
+    );
 
     if output_handler.show_timings {
         println!("stack_solve took: {:?}", stack_solve_time.elapsed());
@@ -194,7 +187,8 @@ fn main() {
     // write out the cfg with found indirect edges
     if args.output.is_some() {
         let mut file = std::fs::File::create(args.output.clone().unwrap()).expect("bad fs open");
-        file.write_all(cfg_runner.cfg_dot_str_with_blocks().as_bytes()).expect("bad file write");
+        file.write_all(cfg_runner.cfg_dot_str_with_blocks().as_bytes())
+            .expect("bad file write");
         println!("Dot file saved to {}", args.output.unwrap());
     } else {
         println!("{}", cfg_runner.cfg_dot_str_with_blocks());
@@ -210,7 +204,8 @@ fn main() {
         temp_path.push(file_name);
 
         let mut file = fs::File::create(temp_path.clone()).unwrap();
-        file.write_all(cfg_runner.cfg_dot_str_with_blocks().as_bytes()).unwrap();
+        file.write_all(cfg_runner.cfg_dot_str_with_blocks().as_bytes())
+            .unwrap();
         Command::new("dot")
             .arg("-Tsvg")
             .arg(temp_path)

@@ -1,9 +1,12 @@
-use itertools::Itertools;
-use ethers::types::U256;
-use revm::opcode::*;
-use std::{collections::{HashMap, HashSet, VecDeque}, hash::Hash, fmt::Debug};
 use crate::cfg_gen::*;
+use ethers::types::U256;
 use fnv::FnvBuildHasher;
+use itertools::Itertools;
+use std::{
+    collections::{HashMap, HashSet, VecDeque},
+    fmt::Debug,
+    hash::Hash,
+};
 
 pub const OPCODE_JUMPMAP: [Option<&'static str>; 256] = [
     /* 0x00 */ Some("STOP"),
@@ -274,11 +277,13 @@ pub struct InstructionBlock {
     pub stack_info: StackInfo,
 }
 
-#[derive(Clone, Default, Eq, PartialEq,)]
+#[derive(Clone, Default, Eq, PartialEq)]
 pub struct StackInfo {
     pub min_stack_size_required_for_entry: u16, // essentially the largest key within map_stack_entry_pos_to_stack_usage_pos
-    pub stack_entry_pos_to_op_usage: HashMap<u16, HashSet<(u16, OpWithPos), FnvBuildHasher>, FnvBuildHasher>, // stack_pos: (pc, OpWithPos)
-    pub stack_entry_pos_to_stack_exit_pos: HashMap<u16, HashSet<u16, FnvBuildHasher>, FnvBuildHasher>, // {entry_pos: [exit_pos1, exit_pos2, ...]}
+    pub stack_entry_pos_to_op_usage:
+        HashMap<u16, HashSet<(u16, OpWithPos), FnvBuildHasher>, FnvBuildHasher>, // stack_pos: (pc, OpWithPos)
+    pub stack_entry_pos_to_stack_exit_pos:
+        HashMap<u16, HashSet<u16, FnvBuildHasher>, FnvBuildHasher>, // {entry_pos: [exit_pos1, exit_pos2, ...]}
     pub stack_size_delta: i16, // how much the stack size changes from entry to exit
     pub push_used_for_jump: Option<u16>, // if a push is used for a jump, this is the value of the push
 }
@@ -286,20 +291,36 @@ pub struct StackInfo {
 impl Debug for StackInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut s = String::new();
-        s.push_str(&format!("\nStack size req: {}, sizeΔ: {}\n", self.min_stack_size_required_for_entry, self.stack_size_delta));
+        s.push_str(&format!(
+            "\nStack size req: {}, sizeΔ: {}\n",
+            self.min_stack_size_required_for_entry, self.stack_size_delta
+        ));
 
         if !self.stack_entry_pos_to_op_usage.is_empty() {
             s.push_str("Entry->Op usage:\n");
-            for (entry_pos, set) in self.stack_entry_pos_to_op_usage.iter().sorted_by(|a, b| a.0.cmp(b.0)) {
+            for (entry_pos, set) in self
+                .stack_entry_pos_to_op_usage
+                .iter()
+                .sorted_by(|a, b| a.0.cmp(b.0))
+            {
                 for (pc, (op, pos)) in set.iter().sorted_by(|a, b| a.0.cmp(&b.0)) {
-            
-                    s.push_str(&format!("\t{}->{}:{}:{}\n", entry_pos, pc, OPCODE_JUMPMAP[*op as usize].unwrap_or("INVALID"), pos));
+                    s.push_str(&format!(
+                        "\t{}->{}:{}:{}\n",
+                        entry_pos,
+                        pc,
+                        OPCODE_JUMPMAP[*op as usize].unwrap_or("INVALID"),
+                        pos
+                    ));
                 }
             }
         }
         if !self.stack_entry_pos_to_stack_exit_pos.is_empty() {
             s.push_str("Entry->Exit:\n");
-            for (entry_pos, exit_pos) in self.stack_entry_pos_to_stack_exit_pos.iter().sorted_by(|a, b| a.0.cmp(b.0))  {
+            for (entry_pos, exit_pos) in self
+                .stack_entry_pos_to_stack_exit_pos
+                .iter()
+                .sorted_by(|a, b| a.0.cmp(b.0))
+            {
                 s.push_str(&format!("\t{entry_pos}->"));
                 // convert exit_pos set to a vec of strings
 
@@ -359,12 +380,17 @@ impl Debug for StackElement {
                     pc_chain.push_str(&format!("{pc} "));
                 }
                 write!(f, "{pc_chain}")
-        },
-            StackElement::Generated(pc, (op, pos)) => write!(f, "{}:{}:{}", pc, OPCODE_JUMPMAP[*op as usize].unwrap_or("INVALID"), pos),
+            }
+            StackElement::Generated(pc, (op, pos)) => write!(
+                f,
+                "{}:{}:{}",
+                pc,
+                OPCODE_JUMPMAP[*op as usize].unwrap_or("INVALID"),
+                pos
+            ),
         }
     }
 }
-
 
 pub type OpWithPos = (u8, u8);
 
@@ -432,11 +458,15 @@ impl InstructionBlock {
         }
     }
 
-    pub fn end_block(&mut self, end_pc: u16, blocks: &mut Vec<InstructionBlock>) -> InstructionBlock {
+    pub fn end_block(
+        &mut self,
+        end_pc: u16,
+        blocks: &mut Vec<InstructionBlock>,
+    ) -> InstructionBlock {
         self.end_pc = end_pc;
         blocks.push(self.clone());
         InstructionBlock::new(end_pc + 1)
-    } 
+    }
 
     pub fn node_color(&self) -> Option<String> {
         for (_pc, op, _push_val) in &self.ops {
@@ -457,17 +487,29 @@ impl InstructionBlock {
 
     // analyze the stack info in an entry-agnostic way
     pub fn analyze_stack_info(&mut self) {
-        assert!(self.stack_info == StackInfo::default(), "stack info should be empty");
+        assert!(
+            self.stack_info == StackInfo::default(),
+            "stack info should be empty"
+        );
 
         let mut min_stack_size_required_for_entry: u16 = 0;
         let mut stack_entries_touched: Vec<StackElement> = Vec::new();
 
-        let mut stack_entry_pos_to_op_usage: HashMap<u16, HashSet<(u16, OpWithPos), FnvBuildHasher>, FnvBuildHasher> = HashMap::with_hasher(FnvBuildHasher::default());
-        let mut stack_entry_pos_to_stack_exit_pos: HashMap<u16, HashSet<u16, FnvBuildHasher>, FnvBuildHasher> = HashMap::with_hasher(FnvBuildHasher::default());
+        let mut stack_entry_pos_to_op_usage: HashMap<
+            u16,
+            HashSet<(u16, OpWithPos), FnvBuildHasher>,
+            FnvBuildHasher,
+        > = HashMap::with_hasher(FnvBuildHasher::default());
+        let mut stack_entry_pos_to_stack_exit_pos: HashMap<
+            u16,
+            HashSet<u16, FnvBuildHasher>,
+            FnvBuildHasher,
+        > = HashMap::with_hasher(FnvBuildHasher::default());
         let mut push_used_for_jump = None;
 
         const REASONABLE_STARTING_STACK_SIZE: usize = 32; // this is just a 'default' size to start a vector with. this can error if a block has, say, N+1 pops in a row
-        let mut stack: VecDeque<StackElement> = VecDeque::with_capacity(REASONABLE_STARTING_STACK_SIZE*2);
+        let mut stack: VecDeque<StackElement> =
+            VecDeque::with_capacity(REASONABLE_STARTING_STACK_SIZE * 2);
         for i in 0..REASONABLE_STARTING_STACK_SIZE as u16 {
             stack.push_back(StackElement::Entry(vec![i]));
         }
@@ -481,113 +523,621 @@ impl InstructionBlock {
             let op_outputs = opcode_info.outputs as u8;
 
             match op {
-                STOP => { /* do nothing */ },
-                ADD => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                MUL => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                SUB => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                DIV => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                SDIV => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                MOD => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                SMOD => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                ADDMOD => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                MULMOD => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                EXP => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                SIGNEXTEND => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                LT => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                GT => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                SLT => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                SGT => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                EQ => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                ISZERO => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                AND => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                OR => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                XOR => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                NOT => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                BYTE => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                SHL => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                SHR => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                SAR => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                SHA3 => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                ADDRESS => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                BALANCE => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                ORIGIN => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                CALLER => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                CALLVALUE => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                CALLDATALOAD => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                CALLDATASIZE => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                CALLDATACOPY => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                CODESIZE => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                CODECOPY => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                GASPRICE => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                EXTCODESIZE => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                EXTCODECOPY => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                RETURNDATASIZE => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                RETURNDATACOPY => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                EXTCODEHASH => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                BLOCKHASH => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                COINBASE => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                NUMBER => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                DIFFICULTY => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                GASLIMIT => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                CHAINID => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                SELFBALANCE => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                BASEFEE => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                POP =>  InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                MLOAD => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                MSTORE => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                MSTORE8 => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                SLOAD => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                SSTORE => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
+                STOP => { /* do nothing */ }
+                ADD => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                MUL => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                SUB => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                DIV => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                SDIV => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                MOD => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                SMOD => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                ADDMOD => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                MULMOD => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                EXP => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                SIGNEXTEND => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                LT => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                GT => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                SLT => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                SGT => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                EQ => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                ISZERO => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                AND => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                OR => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                XOR => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                NOT => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                BYTE => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                SHL => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                SHR => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                SAR => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                SHA3 => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                ADDRESS => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                BALANCE => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                ORIGIN => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                CALLER => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                CALLVALUE => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                CALLDATALOAD => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                CALLDATASIZE => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                CALLDATACOPY => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                CODESIZE => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                CODECOPY => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                GASPRICE => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                EXTCODESIZE => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                EXTCODECOPY => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                RETURNDATASIZE => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                RETURNDATACOPY => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                EXTCODEHASH => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                BLOCKHASH => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                COINBASE => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                NUMBER => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                DIFFICULTY => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                GASLIMIT => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                CHAINID => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                SELFBALANCE => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                BASEFEE => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                POP => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                MLOAD => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                MSTORE => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                MSTORE8 => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                SLOAD => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                SSTORE => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
                 JUMP => {
                     // iterate over the stack and check what the jump destination is
                     let elem = stack.front().expect("no jump destination found");
                     if let StackElement::Generated(pc, (op, _pos)) = elem {
-                        if Vec::from_iter(0x60..=0x7F).contains(op)  {
+                        if Vec::from_iter(0x60..=0x7F).contains(op) {
                             // we know a push statement exited on the stack
                             // now we need to get the value that was pushed by checking pc against self.ops
-                            let val = self.ops.iter().find(|(pc_instr, op_instr, _push_val)| {
-                                pc_instr == pc && op_instr == op
-                            }).map(|(_, _, push_val)| {
-                                push_val.expect("no push val found for push statement {pc} {op}")
-                            }).expect("no push statement found for push statement {pc} {op}");
+                            let val = self
+                                .ops
+                                .iter()
+                                .find(|(pc_instr, op_instr, _push_val)| {
+                                    pc_instr == pc && op_instr == op
+                                })
+                                .map(|(_, _, push_val)| {
+                                    push_val
+                                        .expect("no push val found for push statement {pc} {op}")
+                                })
+                                .expect("no push statement found for push statement {pc} {op}");
                             let val_u16 = val.try_into().expect("push val is not u16");
                             push_used_for_jump = Some(val_u16);
                             // and set indirect jump as false in case this was detected as one earlier
                             self.indirect_jump = None;
                         }
                     }
-                    InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched);
-                },
+                    InstructionBlock::n_in_m_out(
+                        op_inputs,
+                        op_outputs,
+                        &mut stack,
+                        pc,
+                        op,
+                        &mut stack_entry_pos_to_op_usage,
+                        &mut stack_entries_touched,
+                    );
+                }
                 JUMPI => {
                     // iterate over the stack and check what the jump destination is
                     let elem = stack.front().expect("no jump destination found");
                     if let StackElement::Generated(pc, (op, _pos)) = elem {
-                        if Vec::from_iter(0x60..=0x7F).contains(op)  {
+                        if Vec::from_iter(0x60..=0x7F).contains(op) {
                             // we know a push statement exited on the stack
                             // now we need to get the value that was pushed by checking pc against self.ops
-                            let val = self.ops.iter().find(|(pc_instr, op_instr, _push_val)| {
-                                pc_instr == pc && op_instr == op
-                            }).map(|(_, _, push_val)| {
-                                push_val.expect("no push val found for push statement {pc} {op}")
-                            }).expect("no push statement found for push statement {pc} {op}");
+                            let val = self
+                                .ops
+                                .iter()
+                                .find(|(pc_instr, op_instr, _push_val)| {
+                                    pc_instr == pc && op_instr == op
+                                })
+                                .map(|(_, _, push_val)| {
+                                    push_val
+                                        .expect("no push val found for push statement {pc} {op}")
+                                })
+                                .expect("no push statement found for push statement {pc} {op}");
                             let val_u16 = val.try_into().expect("push val is not u16");
                             push_used_for_jump = Some(val_u16);
                             // and set indirect jump as false in case this was detected as one earlier
                             self.indirect_jump = None;
                         }
                     }
-                    InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched);
-                },
-                PC => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                MSIZE => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                GAS => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                JUMPDEST => { /* do nothing */ },
-                0x5F..=0x7F => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
+                    InstructionBlock::n_in_m_out(
+                        op_inputs,
+                        op_outputs,
+                        &mut stack,
+                        pc,
+                        op,
+                        &mut stack_entry_pos_to_op_usage,
+                        &mut stack_entries_touched,
+                    );
+                }
+                PC => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                MSIZE => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                GAS => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                JUMPDEST => { /* do nothing */ }
+                0x5F..=0x7F => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
                 0x80..=0x8f => {
                     // dup
                     let dup_loc = (op - 0x80) as usize;
                     let duplicant_elem = stack[dup_loc].clone();
-                    if let StackElement::Entry(_) =  duplicant_elem {
+                    if let StackElement::Entry(_) = duplicant_elem {
                         stack_entries_touched.push(duplicant_elem.clone());
                     }
                     stack.push_front(duplicant_elem);
@@ -606,22 +1156,134 @@ impl InstructionBlock {
                     stack[swap_loc] = stack[0].clone();
                     stack[0] = swap_idx;
                 }
-                LOG0 => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                LOG1 => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                LOG2 => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                LOG3 => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                LOG4 => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                CREATE => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                CALL => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                CALLCODE => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                RETURN => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                DELEGATECALL => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                CREATE2 => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                STATICCALL => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                REVERT => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                INVALID => { /* do nothing */},
-                SELFDESTRUCT => InstructionBlock::n_in_m_out(op_inputs, op_outputs, &mut stack, pc, op, &mut stack_entry_pos_to_op_usage, &mut stack_entries_touched),
-                _ => {  /* do nothing */ },
+                LOG0 => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                LOG1 => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                LOG2 => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                LOG3 => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                LOG4 => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                CREATE => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                CALL => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                CALLCODE => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                RETURN => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                DELEGATECALL => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                CREATE2 => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                STATICCALL => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                REVERT => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                INVALID => { /* do nothing */ }
+                SELFDESTRUCT => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                _ => { /* do nothing */ }
             }
         }
         // println!("\npc: {:?}", self.start_pc);
@@ -632,16 +1294,24 @@ impl InstructionBlock {
         for (i, elem) in stack.iter().enumerate() {
             if let StackElement::Entry(vals) = elem {
                 for val in vals {
-                    if stack_entries_touched.iter().filter_map(|stack_entry|{
-                        if let StackElement::Entry(vals) = stack_entry {
-                            Some(vals)
-                        } else {
-                            None
-                        }
-                    }).flatten().contains(&val) {
+                    if stack_entries_touched
+                        .iter()
+                        .filter_map(|stack_entry| {
+                            if let StackElement::Entry(vals) = stack_entry {
+                                Some(vals)
+                            } else {
+                                None
+                            }
+                        })
+                        .flatten()
+                        .contains(&val)
+                    {
                         // add the exit position to the set of exit positions for this val
                         // println!("adding exit position {} for entry position {}", i, val);
-                        stack_entry_pos_to_stack_exit_pos.entry(*val).or_insert_with(||HashSet::with_hasher(FnvBuildHasher::default())).insert(i as u16);
+                        stack_entry_pos_to_stack_exit_pos
+                            .entry(*val)
+                            .or_insert_with(|| HashSet::with_hasher(FnvBuildHasher::default()))
+                            .insert(i as u16);
                     }
                 }
             }
@@ -651,21 +1321,25 @@ impl InstructionBlock {
         // if there are, then we need to add them with self.add_push_val_stack_loc
         for (i, elem) in stack.iter().enumerate() {
             match elem {
-                StackElement::Generated(pc, (op, _pos)) if Vec::from_iter(0x60..=0x7F).contains(op) => {
+                StackElement::Generated(pc, (op, _pos))
+                    if Vec::from_iter(0x60..=0x7F).contains(op) =>
+                {
                     // we know a push statement exited on the stack
                     // now we need to get the value that was pushed by checking pc against self.ops
-                    let val = self.ops.iter().find(|(pc_instr, op_instr, _push_val)| {
-                        pc_instr == pc && op_instr == op
-                    }).map(|(_, _, push_val)| {
-                        push_val.expect("no push val found for push statement {pc} {op}")
-                    }).expect("no push statement found for push statement {pc} {op}");
+                    let val = self
+                        .ops
+                        .iter()
+                        .find(|(pc_instr, op_instr, _push_val)| pc_instr == pc && op_instr == op)
+                        .map(|(_, _, push_val)| {
+                            push_val.expect("no push val found for push statement {pc} {op}")
+                        })
+                        .expect("no push statement found for push statement {pc} {op}");
 
                     self.add_push_val_stack_loc_on_exit(val, i as u16);
-                },
-                _ => { /* do nothing */ },
+                }
+                _ => { /* do nothing */ }
             }
         }
-
 
         let stack_size_delta = stack.len() as i16 - REASONABLE_STARTING_STACK_SIZE as i16;
 
@@ -673,8 +1347,8 @@ impl InstructionBlock {
         stack_entries_touched.iter().for_each(|elem| {
             if let StackElement::Entry(vals) = elem {
                 for val in vals {
-                    if *val+1 > min_stack_size_required_for_entry {
-                        min_stack_size_required_for_entry = *val+1;
+                    if *val + 1 > min_stack_size_required_for_entry {
+                        min_stack_size_required_for_entry = *val + 1;
                     }
                 }
             }
@@ -686,7 +1360,7 @@ impl InstructionBlock {
                 StackElement::Entry(_) => {
                     // retain only if the entry has been touched
                     stack_entries_touched.contains(elem)
-                },
+                }
                 _ => true, // keep, as it is a generated stack element
             }
         });
@@ -699,65 +1373,64 @@ impl InstructionBlock {
         });
         // println!("stack_entry_pos_to_stack_exit_pos after retain: {:?}", &stack_entry_pos_to_stack_exit_pos);
 
-
         // now check if there are missing entry positions from the (0..reasonable_starting_stack_size)
         // range. If there are, then we need to add them to the stack_entry_pos_to_stack_exit_pos map as a "dead" value
         for i in 0..REASONABLE_STARTING_STACK_SIZE {
             // look for entry position i within the stack vector
-            let is_in_stack = stack.iter().filter_map(|elem| {
-                match elem {
-                    StackElement::Entry(vals) => {
-                        Some(vals)
-                    },
-                    _ => {None},
-                }
-            }).flatten()
-            .any(|elem| {
-                *elem == i as u16
-            });
-            let has_been_touched = stack_entries_touched.iter().filter_map(|elem| {
-                match elem {
-                    StackElement::Entry(vals) => {
-                        Some(vals)
-                    },
-                    _ => {None},
-                }
-            }).flatten().any(|elem| {
-                *elem == i as u16
-            });
+            let is_in_stack = stack
+                .iter()
+                .filter_map(|elem| match elem {
+                    StackElement::Entry(vals) => Some(vals),
+                    _ => None,
+                })
+                .flatten()
+                .any(|elem| *elem == i as u16);
+            let has_been_touched = stack_entries_touched
+                .iter()
+                .filter_map(|elem| match elem {
+                    StackElement::Entry(vals) => Some(vals),
+                    _ => None,
+                })
+                .flatten()
+                .any(|elem| *elem == i as u16);
             // println!("i: {i}, is_in_stack: {}, has_been_touched: {}", is_in_stack, has_been_touched);
             if !is_in_stack && has_been_touched {
                 // this entry position is not present in the stack, so we need to add it at an impossible exit position
-                stack_entry_pos_to_stack_exit_pos.entry(i as u16).or_insert_with(||HashSet::with_hasher(FnvBuildHasher::default())).insert(1025);
+                stack_entry_pos_to_stack_exit_pos
+                    .entry(i as u16)
+                    .or_insert_with(|| HashSet::with_hasher(FnvBuildHasher::default()))
+                    .insert(1025);
             }
         }
-
-        
 
         // update the stack info
         self.stack_info = StackInfo {
             min_stack_size_required_for_entry,
             stack_entry_pos_to_op_usage,
             stack_entry_pos_to_stack_exit_pos,
-            stack_size_delta, 
-            push_used_for_jump
+            stack_size_delta,
+            push_used_for_jump,
         };
     }
 
+    #[allow(clippy::type_complexity)]
     pub fn n_in_m_out(
-        n: u8, 
-        m: u8, 
-        stack: &mut VecDeque<StackElement>, 
-        pc: u16, 
-        op: u8, 
-        stack_entry_pos_to_op_usage: &mut HashMap<u16, HashSet<(u16, (u8, u8)), FnvBuildHasher>, FnvBuildHasher>, 
-        stack_entries_touched: &mut Vec<StackElement>, 
+        n: u8,
+        m: u8,
+        stack: &mut VecDeque<StackElement>,
+        pc: u16,
+        op: u8,
+        stack_entry_pos_to_op_usage: &mut HashMap<
+            u16,
+            HashSet<(u16, (u8, u8)), FnvBuildHasher>,
+            FnvBuildHasher,
+        >,
+        stack_entries_touched: &mut Vec<StackElement>,
     ) {
         assert!(m <= 1); // not possible to have more than one output in evm
 
-
         let vec_popped = stack.drain(0..n as usize).collect::<Vec<_>>();
-        // for each element used in the op, update map_stack_entry_pos_to_stack_usage_pos 
+        // for each element used in the op, update map_stack_entry_pos_to_stack_usage_pos
         for (_i, elem) in vec_popped.iter().enumerate() {
             // check if element is a StackElement::Entry enum
             if let StackElement::Entry(_entry) = &elem {
@@ -766,45 +1439,65 @@ impl InstructionBlock {
             }
         }
         if NON_DESTROYING_OPCODES.contains(&op) {
-            assert!(n == 2 && m == 1, "logic for non-destroying stack breaks for opcodes not using 2 inputs 1 output"); // NON_DESTROYING_OPCODES should only have 2 inputs and 1 output, if not, this logic breaks
-            // rather than place a Generated element on the stack, place an Entry value that
-            match vec_popped.into_iter().take(2).collect_tuple::<(_,_)>().unwrap() {
+            assert!(
+                n == 2 && m == 1,
+                "logic for non-destroying stack breaks for opcodes not using 2 inputs 1 output"
+            ); // NON_DESTROYING_OPCODES should only have 2 inputs and 1 output, if not, this logic breaks
+               // rather than place a Generated element on the stack, place an Entry value that
+            match vec_popped
+                .into_iter()
+                .take(2)
+                .collect_tuple::<(_, _)>()
+                .unwrap()
+            {
                 (StackElement::Entry(mut entry), StackElement::Entry(entry2)) => {
                     for val in entry.clone() {
-                        stack_entry_pos_to_op_usage.entry(val).or_insert_with(||HashSet::with_hasher(FnvBuildHasher::default())).insert((pc, (op, 0_u8)));
+                        stack_entry_pos_to_op_usage
+                            .entry(val)
+                            .or_insert_with(|| HashSet::with_hasher(FnvBuildHasher::default()))
+                            .insert((pc, (op, 0_u8)));
                     }
                     for val in entry2.clone() {
-                        stack_entry_pos_to_op_usage.entry(val).or_insert_with(||HashSet::with_hasher(FnvBuildHasher::default())).insert((pc, (op, 1_u8)));
+                        stack_entry_pos_to_op_usage
+                            .entry(val)
+                            .or_insert_with(|| HashSet::with_hasher(FnvBuildHasher::default()))
+                            .insert((pc, (op, 1_u8)));
                     }
-                    
+
                     entry.extend(entry2); // extends in place
                     stack.push_front(StackElement::Entry(entry));
-   
-                },
+                }
                 (StackElement::Entry(entry), _) => {
                     stack.push_front(StackElement::Entry(entry.clone()));
                     for val in entry {
-                        stack_entry_pos_to_op_usage.entry(val).or_insert_with(||HashSet::with_hasher(FnvBuildHasher::default())).insert((pc, (op, 0_u8)));
+                        stack_entry_pos_to_op_usage
+                            .entry(val)
+                            .or_insert_with(|| HashSet::with_hasher(FnvBuildHasher::default()))
+                            .insert((pc, (op, 0_u8)));
                     }
-                },
+                }
                 (_, StackElement::Entry(entry2)) => {
                     stack.push_front(StackElement::Entry(entry2.clone()));
                     for val in entry2 {
-                        stack_entry_pos_to_op_usage.entry(val).or_insert_with(||HashSet::with_hasher(FnvBuildHasher::default())).insert((pc, (op, 1_u8)));
+                        stack_entry_pos_to_op_usage
+                            .entry(val)
+                            .or_insert_with(|| HashSet::with_hasher(FnvBuildHasher::default()))
+                            .insert((pc, (op, 1_u8)));
                     }
-                },
-                _ => { 
+                }
+                _ => {
                     stack.push_front(StackElement::Generated(pc, (op, 0)));
-                },
+                }
             }
         } else {
-            (0..m).for_each(|i| {
-                stack.push_front(StackElement::Generated(pc, (op, i)))
-            });
+            (0..m).for_each(|i| stack.push_front(StackElement::Generated(pc, (op, i))));
             for (i, elem) in vec_popped.into_iter().enumerate() {
                 if let StackElement::Entry(entry) = elem {
                     for val in entry {
-                        stack_entry_pos_to_op_usage.entry(val).or_insert_with(||HashSet::with_hasher(FnvBuildHasher::default())).insert((pc, (op, i as u8)));
+                        stack_entry_pos_to_op_usage
+                            .entry(val)
+                            .or_insert_with(|| HashSet::with_hasher(FnvBuildHasher::default()))
+                            .insert((pc, (op, i as u8)));
                     }
                 }
             }
@@ -812,27 +1505,30 @@ impl InstructionBlock {
     }
 }
 
-
-
 pub fn disassemble(bytecode: &Vec<u8>) -> Vec<InstructionBlock> {
     let mut pc: u16 = 0;
     let mut blocks: Vec<InstructionBlock> = Vec::new();
     // Iterate over the bytecode, disassembling each instruction.
     let mut block = InstructionBlock::new(0);
     let mut push_flag: i32 = 0;
-    while (pc as usize) < bytecode.len(){
-
+    while (pc as usize) < bytecode.len() {
         let op = bytecode[pc as usize];
         let op_str = OPCODE_JUMPMAP[op as usize];
         match op_str {
             Some(name) => {
                 if name.contains("PUSH") {
                     let byte_count_to_push: u16 = name.replace("PUSH", "").parse().unwrap();
-                    let pushed_bytes = match  bytecode.get(pc as usize + 1..pc as usize + 1 + byte_count_to_push as usize) {
+                    let pushed_bytes = match bytecode
+                        .get(pc as usize + 1..pc as usize + 1 + byte_count_to_push as usize)
+                    {
                         Some(bytes) => {
-                            let bytes_str = bytes.iter().map(|b| format!("{b:02x}")).collect::<Vec<String>>().join("");
+                            let bytes_str = bytes
+                                .iter()
+                                .map(|b| format!("{b:02x}"))
+                                .collect::<Vec<String>>()
+                                .join("");
                             U256::from_str_radix(&bytes_str, 16).unwrap()
-                        },
+                        }
                         None => {
                             // OoB, this can actually happen in the metadata often but is useless
                             let pushed_bytes = U256::from(0x45); // what actually happens in the evm is the remaining OoB bytes are treated as zeros and appended
@@ -862,7 +1558,7 @@ pub fn disassemble(bytecode: &Vec<u8>) -> Vec<InstructionBlock> {
                 } else {
                     block.add_instruction(pc, op, None);
                 }
-            },
+            }
             None => {
                 //invalid
                 //end block, but idk, not sure how to handle this. another new block may not start
