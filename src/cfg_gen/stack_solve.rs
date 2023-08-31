@@ -1,4 +1,3 @@
-use ethers::types::U256;
 use fnv::FnvBuildHasher;
 use std::collections::{BTreeSet, HashMap, HashSet, VecDeque};
 
@@ -72,7 +71,7 @@ impl EdgeStack {
             FnvBuildHasher,
         >,
         stack_entry_default_adjustment: i16,
-        push_vals: &[(U256, Option<BTreeSet<u16>>)],
+        push_vals: &[(Vec<u8>, Option<BTreeSet<u16>>)],
         set_all_valid_jumpdests: &HashSet<u16, FnvBuildHasher>,
     ) -> Self {
         let mut stack_pos = self.stack_pos;
@@ -129,10 +128,10 @@ impl EdgeStack {
             }
         }
         // Now, we need to add any push_vals that are <= u16 values
-        for (push_val, exit_pos) in push_vals.iter() {
+        for (push_val, exit_pos) in push_vals {
             // check if the push_val is <= u16
-            if push_val <= &U256::from(u16::MAX) {
-                let push_val = push_val.as_u32() as u16;
+            if push_val.len() <= 2 {
+                let push_val: u16 = get_u16_from_u8_slice(push_val);
 
                 // check if the push_val is a valid jump dest
                 if set_all_valid_jumpdests.contains(&push_val) {

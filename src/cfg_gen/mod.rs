@@ -904,3 +904,7 @@ pub fn opcode(code: u8) -> Opcode {
         },
     }
 }
+
+fn get_u16_from_u8_slice(push_val: &[u8]) -> u16 {
+    (*push_val.first().unwrap_or(&0) as u16) << 8 | (*push_val.get(1).unwrap_or(&0) as u16)
+}
