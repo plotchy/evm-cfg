@@ -213,9 +213,7 @@ fn main() {
             .arg(format!("{}/temp.svg", temp_dir.to_string_lossy()))
             .output()
             .expect("failed to execute process");
-        Command::new("open")
-            .arg(format!("{}/temp.svg", temp_dir.to_string_lossy()))
-            .spawn()
+        open::that(format!("{}/temp.svg", temp_dir.to_string_lossy()))
             .expect("failed to execute process");
     }
 }
