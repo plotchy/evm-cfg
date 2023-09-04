@@ -42,7 +42,7 @@ VS Marketplace Link: https://marketplace.visualstudio.com/items?itemName=tintinw
 For minimal dependencies, you can convert the .dot file to a .svg picture for viewing:
 
 ```bash
-evm-cfg ./examples/weth9.evm --open
+evm-cfg ./examples/weth9.evm -o ./examples/weth9.svg --open
 
 # which is equivalent to:
 evm-cfg ./examples/weth9.evm -o ./examples/cfg_weth.dot;
