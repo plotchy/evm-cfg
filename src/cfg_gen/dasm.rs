@@ -395,11 +395,6 @@ impl Debug for StackElement {
 
 pub type OpWithPos = (u8, u8);
 
-fn format_pc(pc: u16) -> String {
-    let pad_width = if pc <= u8::MAX as u16 { 2 } else { 4 };
-    format!("{pc:0>pad_width$x}")
-}
-
 impl Debug for InstructionBlock {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut s = String::new();

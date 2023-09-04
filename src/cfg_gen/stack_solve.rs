@@ -260,7 +260,8 @@ pub fn symbolic_cycle(
                 } else {
                     // This is a symbolic jump created within the block
                     println!(
-                        "Symbolic jump to location created within block at jump pc: {last_pc}"
+                        "Symbolic jump to location created within block at jump pc: {}",
+                        format_pc(*last_pc)
                     );
                     if label_symbolic_jumps {
                         println!("\t- Labeling symbolic jumps is enabled, output may be unbearable. change variable in main.rs if youd like, skipping this jump");
@@ -346,7 +347,7 @@ pub fn symbolic_cycle(
                 } else {
                     // we do not have a tracked push value for this entry, this is symbolic
                     // This is a symbolic jump from an entry position not tracked
-                    println!("Stack Entry not tracked for this jump. Symbolic jump to stack loc at jump pc: {last_pc}");
+                    println!("Stack Entry not tracked for this jump. Symbolic jump to stack loc at jump pc: {}", format_pc(*last_pc));
                     if label_symbolic_jumps {
                         println!("\t- Labeling symbolic jumps is enabled, output may be unbearable. change variable in main.rs if youd like, skipping this jump");
                         // add all jumpdests as possible next nodes as long as the current stack size is >= the jumpdest's required stack size
