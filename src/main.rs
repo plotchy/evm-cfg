@@ -6,6 +6,7 @@ use revm::Bytecode;
 use std::{
     collections::{BTreeMap, HashSet},
     io::Write,
+    process::Command,
 };
 
 pub mod cfg_gen;
@@ -17,7 +18,8 @@ struct Args {
     #[clap(value_hint = ValueHint::FilePath, value_name = "PATH or BYTECODE")]
     pub path_or_bytecode: String,
 
-    /// Where to save the .dot string used to visualize the analyzed cfg, default is stdout
+    /// What format and location to store the analyzed cfg, default is stdout, supports all
+    /// standard graphviz formats
     #[clap(long, short)]
     pub output: Option<String>,
 
@@ -185,35 +187,37 @@ fn main() {
     }
 
     // write out the cfg with found indirect edges
-    if args.output.is_some() {
-        let mut file = std::fs::File::create(args.output.clone().unwrap()).expect("bad fs open");
+    if let Some(filename) = &args.output {
+        let mut file = std::fs::File::create(filename).expect("bad fs open");
         file.write_all(cfg_runner.cfg_dot_str_with_blocks().as_bytes())
             .expect("bad file write");
-        println!("Dot file saved to {}", args.output.unwrap());
+        println!("Dot file saved to {}", &filename);
+
+        let ext = filename.split('.').last().unwrap();
+        if ext != "dot" {
+            let output = Command::new("dot")
+                .arg(format!("-T{}", ext))
+                .arg("-o")
+                .arg(filename) // output file
+                .arg(filename) // file to read
+                .output()
+                .expect("failed to execute process");
+
+            if output.stderr.is_empty() {
+                println!("File saved to {}", &filename);
+            }
+        }
     } else {
         println!("{}", cfg_runner.cfg_dot_str_with_blocks());
-    }
+    };
 
     if args.open {
-        use std::env::temp_dir;
-        use std::fs;
-        use std::process::Command;
-        let temp_dir = temp_dir();
-        let file_name = "dot.dot";
-        let mut temp_path = temp_dir.clone();
-        temp_path.push(file_name);
-
-        let mut file = fs::File::create(temp_path.clone()).unwrap();
-        file.write_all(cfg_runner.cfg_dot_str_with_blocks().as_bytes())
-            .unwrap();
-        Command::new("dot")
-            .arg("-Tsvg")
-            .arg(temp_path)
-            .arg("-o")
-            .arg(format!("{}/temp.svg", temp_dir.to_string_lossy()))
-            .output()
-            .expect("failed to execute process");
-        open::that(format!("{}/temp.svg", temp_dir.to_string_lossy()))
-            .expect("failed to execute process");
+        if let Some(filename) = &args.output {
+            open::that(filename).expect("failed to open the doc");
+        } else {
+            eprintln!(
+                "Cannot open file that was not saved. Consider specifying output with --output"
+            );
+        }
     }
 }
