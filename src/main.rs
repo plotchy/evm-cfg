@@ -18,8 +18,8 @@ struct Args {
     #[clap(value_hint = ValueHint::FilePath, value_name = "PATH or BYTECODE")]
     pub path_or_bytecode: String,
 
-    /// What format and location to store the analyzed cfg, default is stdout, supports all
-    /// standard graphviz formats
+    /// Filename and format for storing the analyzed cfg. Supports all standard
+    /// graphviz formats (*.dot, *.png, *.jpg, ...). Default is stdout in dot format
     #[clap(long, short)]
     pub output: Option<String>,
 
