@@ -23,7 +23,7 @@ struct Args {
     #[clap(long, short)]
     pub output: Option<String>,
 
-    /// Whether to open the dot visualization of the analyzed cfg as a .svg
+    /// Whether to open saved dot visualization of the analyzed cfg with associated application
     #[clap(long, default_value = "false")]
     pub open: bool,
 
