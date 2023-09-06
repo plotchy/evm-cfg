@@ -1,5 +1,4 @@
 use crate::cfg_gen::*;
-use ethers::types::U256;
 use fnv::FnvBuildHasher;
 use itertools::Itertools;
 use std::{
@@ -8,6 +7,7 @@ use std::{
     hash::Hash,
 };
 
+// TODO: Implement enum
 pub const OPCODE_JUMPMAP: [Option<&'static str>; 256] = [
     /* 0x00 */ Some("STOP"),
     /* 0x01 */ Some("ADD"),
@@ -271,9 +271,10 @@ pub const OPCODE_JUMPMAP: [Option<&'static str>; 256] = [
 pub struct InstructionBlock {
     pub start_pc: u16,
     pub end_pc: u16,
-    pub ops: Vec<(u16, u8, Option<U256>)>,
+    // TODO: Get rid of vectors and work with slices
+    pub ops: Vec<(u16, u8, Option<Vec<u8>>)>, // Vec<pc, op_code, push_val
     pub indirect_jump: Option<u16>,
-    pub push_vals: Vec<(U256, Option<BTreeSet<u16>>)>,
+    pub push_vals: Vec<(Vec<u8>, Option<BTreeSet<u16>>)>,
     pub stack_info: StackInfo,
 }
 
@@ -377,7 +378,7 @@ impl Debug for StackElement {
             StackElement::Entry(pcs) => {
                 let mut pc_chain = String::new();
                 for pc in pcs {
-                    pc_chain.push_str(&format!("{pc} "));
+                    pc_chain.push_str(&format!("{pc} ", pc = format_pc(*pc)));
                 }
                 write!(f, "{pc_chain}")
             }
@@ -398,12 +399,19 @@ impl Debug for InstructionBlock {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut s = String::new();
 
-        // start the string by doing a typical "pc14: PUSH2 0x16"
+        // start the string by doing a typical "pc14: PUSH1 0x16"
         for (pc, op, push_val) in &self.ops {
             let op_str = OPCODE_JUMPMAP[*op as usize].unwrap_or("INVALID");
+            let formatted_pc = format_pc(*pc);
             match push_val {
-                Some(val) => s.push_str(&format!("pc{pc}: {op_str} {val}\n")),
-                None => s.push_str(&format!("pc{pc}: {op_str}\n")),
+                Some(val) => {
+                    // define how many bytes do we need to display
+                    s.push_str(&format!(
+                        "pc{formatted_pc}: {op_str} {hex_val}\n",
+                        hex_val = hex::encode(val)
+                    ))
+                }
+                None => s.push_str(&format!("pc{formatted_pc}: {op_str}\n")),
             };
         }
 
@@ -430,8 +438,8 @@ impl InstructionBlock {
         }
     }
 
-    pub fn add_instruction(&mut self, pc: u16, op: u8, push_val: Option<U256>) {
-        self.ops.push((pc, op, push_val));
+    pub fn add_instruction(&mut self, pc: u16, op: u8, push_val: Option<Vec<u8>>) {
+        self.ops.push((pc, op, push_val.clone()));
         if let Some(push_val) = push_val {
             self.push_vals.push((push_val, None));
         }
@@ -441,9 +449,9 @@ impl InstructionBlock {
         self.indirect_jump = Some(pc);
     }
 
-    pub fn add_push_val_stack_loc_on_exit(&mut self, val: U256, pos: u16) {
+    pub fn add_push_val_stack_loc_on_exit(&mut self, val: &mut Vec<u8>, pos: u16) {
         for (push_val, stack_pos) in self.push_vals.iter_mut() {
-            if *push_val == val {
+            if push_val == val {
                 // insert blank set if none, then insert pos
                 match stack_pos {
                     Some(stack_pos) => {
@@ -1043,11 +1051,13 @@ impl InstructionBlock {
                                 })
                                 .map(|(_, _, push_val)| {
                                     push_val
+                                        .clone()
                                         .expect("no push val found for push statement {pc} {op}")
                                 })
                                 .expect("no push statement found for push statement {pc} {op}");
-                            let val_u16 = val.try_into().expect("push val is not u16");
-                            push_used_for_jump = Some(val_u16);
+
+                            let push_val: u16 = get_u16_from_u8_slice(&val);
+                            push_used_for_jump = Some(push_val);
                             // and set indirect jump as false in case this was detected as one earlier
                             self.indirect_jump = None;
                         }
@@ -1077,11 +1087,13 @@ impl InstructionBlock {
                                 })
                                 .map(|(_, _, push_val)| {
                                     push_val
+                                        .clone()
                                         .expect("no push val found for push statement {pc} {op}")
                                 })
                                 .expect("no push statement found for push statement {pc} {op}");
-                            let val_u16 = val.try_into().expect("push val is not u16");
-                            push_used_for_jump = Some(val_u16);
+
+                            let push_val: u16 = get_u16_from_u8_slice(&val);
+                            push_used_for_jump = Some(push_val);
                             // and set indirect jump as false in case this was detected as one earlier
                             self.indirect_jump = None;
                         }
@@ -1326,16 +1338,18 @@ impl InstructionBlock {
                 {
                     // we know a push statement exited on the stack
                     // now we need to get the value that was pushed by checking pc against self.ops
-                    let val = self
+                    let mut val = self
                         .ops
                         .iter()
                         .find(|(pc_instr, op_instr, _push_val)| pc_instr == pc && op_instr == op)
                         .map(|(_, _, push_val)| {
-                            push_val.expect("no push val found for push statement {pc} {op}")
+                            push_val
+                                .clone()
+                                .expect("no push val found for push statement {pc} {op}")
                         })
                         .expect("no push statement found for push statement {pc} {op}");
 
-                    self.add_push_val_stack_loc_on_exit(val, i as u16);
+                    self.add_push_val_stack_loc_on_exit(&mut val, i as u16);
                 }
                 _ => { /* do nothing */ }
             }
@@ -1505,12 +1519,13 @@ impl InstructionBlock {
     }
 }
 
-pub fn disassemble(bytecode: &Vec<u8>) -> Vec<InstructionBlock> {
+pub fn disassemble(bytecode: &[u8]) -> Vec<InstructionBlock> {
     let mut pc: u16 = 0;
     let mut blocks: Vec<InstructionBlock> = Vec::new();
     // Iterate over the bytecode, disassembling each instruction.
     let mut block = InstructionBlock::new(0);
     let mut push_flag: i32 = 0;
+    // TODO: Implement iterator
     while (pc as usize) < bytecode.len() {
         let op = bytecode[pc as usize];
         let op_str = OPCODE_JUMPMAP[op as usize];
@@ -1518,24 +1533,12 @@ pub fn disassemble(bytecode: &Vec<u8>) -> Vec<InstructionBlock> {
             Some(name) => {
                 if name.contains("PUSH") {
                     let byte_count_to_push: u16 = name.replace("PUSH", "").parse().unwrap();
-                    let pushed_bytes = match bytecode
+                    let pushed_bytes = bytecode
                         .get(pc as usize + 1..pc as usize + 1 + byte_count_to_push as usize)
-                    {
-                        Some(bytes) => {
-                            let bytes_str = bytes
-                                .iter()
-                                .map(|b| format!("{b:02x}"))
-                                .collect::<Vec<String>>()
-                                .join("");
-                            U256::from_str_radix(&bytes_str, 16).unwrap()
-                        }
-                        None => {
-                            // OoB, this can actually happen in the metadata often but is useless
-                            let pushed_bytes = U256::from(0x45); // what actually happens in the evm is the remaining OoB bytes are treated as zeros and appended
-                            block.add_instruction(pc, op, Some(pushed_bytes));
-                            break;
-                        }
-                    };
+                        .unwrap_or(&[0x45])
+                        .to_vec();
+                    // OoB, this can actually happen in the metadata often but is useless
+                    // let pushed_bytes = 0x45; // what actually happens in the evm is the remaining OoB bytes are treated as zeros and appended
                     block.add_instruction(pc, op, Some(pushed_bytes));
                     pc += byte_count_to_push;
                     push_flag = 2;
