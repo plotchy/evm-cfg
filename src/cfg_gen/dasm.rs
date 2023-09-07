@@ -407,11 +407,11 @@ impl Debug for InstructionBlock {
                 Some(val) => {
                     // define how many bytes do we need to display
                     s.push_str(&format!(
-                        "pc{formatted_pc}: {op_str} {hex_val}\n",
+                        "[{formatted_pc}] {op_str} {hex_val}\n",
                         hex_val = hex::encode(val)
                     ))
                 }
-                None => s.push_str(&format!("pc{formatted_pc}: {op_str}\n")),
+                None => s.push_str(&format!("[{formatted_pc}] {op_str}\n")),
             };
         }
 
