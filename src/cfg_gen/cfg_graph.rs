@@ -353,11 +353,11 @@ impl<'main> CFGRunner<'main> {
                     match color {
                         Some(color) => {
                             node_str.push_str(&format!(
-                                "label = \"{instruction_block:?}\" color = \"{color}\""
+                                "label = \"{instruction_block}\" color = \"{color}\""
                             ));
                         }
                         None => {
-                            node_str.push_str(&format!("label = \"{instruction_block:?}\""));
+                            node_str.push_str(&format!("label = \"{instruction_block}\""));
                         }
                     }
                     // if the node has no incoming edges, fill the node with deepred
