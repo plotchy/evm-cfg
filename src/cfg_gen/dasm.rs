@@ -3,7 +3,7 @@ use fnv::FnvBuildHasher;
 use itertools::Itertools;
 use std::{
     collections::{HashMap, HashSet, VecDeque},
-    fmt::Debug,
+    fmt::Display,
     hash::Hash,
 };
 
@@ -289,7 +289,7 @@ pub struct StackInfo {
     pub push_used_for_jump: Option<u16>, // if a push is used for a jump, this is the value of the push
 }
 
-impl Debug for StackInfo {
+impl Display for StackInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut s = String::new();
         s.push_str(&format!(
@@ -372,7 +372,7 @@ pub enum StackElement {
     Generated(u16, OpWithPos), // (pc, (op, added_pos))
 }
 
-impl Debug for StackElement {
+impl Display for StackElement {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             StackElement::Entry(pcs) => {
@@ -395,7 +395,7 @@ impl Debug for StackElement {
 
 pub type OpWithPos = (u8, u8);
 
-impl Debug for InstructionBlock {
+impl Display for InstructionBlock {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut s = String::new();
 
@@ -420,7 +420,7 @@ impl Debug for InstructionBlock {
             s.push_str("Indirect!\n");
         }
 
-        s.push_str(&format!("{:?}", self.stack_info));
+        s.push_str(&format!("{}", self.stack_info));
 
         write!(f, "{s}")
     }
