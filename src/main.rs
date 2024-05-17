@@ -102,7 +102,6 @@ fn main() {
             show_jump_dests: true,
         },
     };
-    let bytecode_vec = hex::decode(&bytecode_string).expect("bad hex");
 
     // DISASSEMBLY
     let disassembly_time = std::time::Instant::now();
@@ -128,7 +127,7 @@ fn main() {
     }
 
     // convert bytecode to instruction blocks
-    let mut instruction_blocks = dasm::disassemble(&bytecode_vec);
+    let mut instruction_blocks = dasm::disassemble(bytecode_analysed.original_byte_slice().into());
 
     // analyze each instruction block statically to determine stack usage agnostic to entry values
     for block in &mut instruction_blocks {
@@ -143,7 +142,7 @@ fn main() {
 
     // create initial cfg using only nodes
     let mut cfg_runner =
-        cfg_gen::cfg_graph::CFGRunner::new(bytecode_vec, &mut map_to_instructionblocks);
+        cfg_gen::cfg_graph::CFGRunner::new(bytecode_analysed.original_byte_slice().into(), &mut map_to_instructionblocks);
     if output_handler.show_bare_nodes {
         // write out the cfg with bare nodes only
         let mut file = std::fs::File::create("cfg_nodes_only.dot").expect("bad fs open");
