@@ -101,8 +101,8 @@ pub const OPCODE_JUMPMAP: [Option<&'static str>; 256] = [
     /* 0x59 */ Some("MSIZE"),
     /* 0x5a */ Some("GAS"),
     /* 0x5b */ Some("JUMPDEST"),
-    /* 0x5c */ None,
-    /* 0x5d */ None,
+    /* 0x5c */ Some("TLOAD"),
+    /* 0x55 */ Some("TSTORE"),
     /* 0x5e */ None,
     /* 0x5f */ Some("PUSH0"),
     /* 0x60 */ Some("PUSH1"),
@@ -757,7 +757,7 @@ impl InstructionBlock {
                     &mut stack_entry_pos_to_op_usage,
                     &mut stack_entries_touched,
                 ),
-                SHA3 => InstructionBlock::n_in_m_out(
+                KECCAK256 => InstructionBlock::n_in_m_out(
                     op_inputs,
                     op_outputs,
                     &mut stack,
@@ -1137,6 +1137,24 @@ impl InstructionBlock {
                 ),
                 JUMPDEST => { /* do nothing */ }
                 0x5F..=0x7F => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                TLOAD => InstructionBlock::n_in_m_out(
+                    op_inputs,
+                    op_outputs,
+                    &mut stack,
+                    pc,
+                    op,
+                    &mut stack_entry_pos_to_op_usage,
+                    &mut stack_entries_touched,
+                ),
+                TSTORE => InstructionBlock::n_in_m_out(
                     op_inputs,
                     op_outputs,
                     &mut stack,

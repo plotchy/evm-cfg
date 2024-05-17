@@ -1,5 +1,5 @@
 use crate::cfg_gen::cfg_graph::*;
-use revm::opcode::*;
+use revm::interpreter::opcode::*;
 use std::{collections::BTreeSet, fmt::Debug};
 
 pub mod cfg_graph;
@@ -189,7 +189,7 @@ pub fn opcode(code: u8) -> Opcode {
             outputs: 1,
         },
         0x20 => Opcode {
-            name: String::from("SHA3"),
+            name: String::from("KECCAK256"),
             mingas: 30,
             inputs: 2,
             outputs: 1,
@@ -414,6 +414,18 @@ pub fn opcode(code: u8) -> Opcode {
             name: String::from("JUMPDEST"),
             mingas: 1,
             inputs: 0,
+            outputs: 0,
+        },
+        0x5c => Opcode {
+            name: String::from("TLOAD"),
+            mingas: 100,
+            inputs: 1,
+            outputs: 1,
+        },
+        0x5d => Opcode {
+            name: String::from("TSTORE"),
+            mingas: 100,
+            inputs: 2,
             outputs: 0,
         },
         0x5f => Opcode {

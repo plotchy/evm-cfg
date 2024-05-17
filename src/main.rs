@@ -2,7 +2,8 @@ use crate::cfg_gen::{dasm::InstructionBlock, *};
 use clap::{ArgAction, Parser, ValueHint};
 use evm_cfg::OutputHandler;
 use fnv::FnvBuildHasher;
-use revm::Bytecode;
+use revm::primitives::{Bytecode, Bytes};
+use revm::interpreter::analysis::to_analysed;
 use std::{
     collections::{BTreeMap, HashSet},
     io::Write,
@@ -106,23 +107,21 @@ fn main() {
     // DISASSEMBLY
     let disassembly_time = std::time::Instant::now();
     // get jumptable from revm
-    let revm_bytecode = Bytecode::new_raw(bytecode_vec.clone().into());
-    let revm_bytecode = revm_bytecode.lock::<revm::LatestSpec>();
-    let revm_jumptable = revm_bytecode.jumptable();
+    let contract_data : Bytes = hex::decode(&bytecode_string ).unwrap().into();
+    let bytecode_analysed = to_analysed(Bytecode::new_raw(contract_data));
+    let revm_jumptable = bytecode_analysed.legacy_jump_table().expect("revm bytecode analysis failed");
 
-    // convert jumptable to Hashset of valid jumpdests. 2byte key means Fnv is fast
-    let set_all_valid_jumpdests: HashSet<u16, FnvBuildHasher> = revm_jumptable
-        .analysis
-        .iter()
-        .enumerate()
-        .filter_map(|(pc, data)| {
-            if data.is_jump() {
-                Some(pc as u16)
-            } else {
-                None
+    // convert jumptable to HashSet of valid jumpdests using as_slice
+    let mut set_all_valid_jumpdests: HashSet<u16, FnvBuildHasher> = HashSet::default();
+    let slice = revm_jumptable.as_slice();
+    for (byte_index, &byte) in slice.iter().enumerate() {
+        for bit_index in 0..8 {
+            if byte & (1 << bit_index) != 0 {
+                let pc = (byte_index * 8 + bit_index) as u16;
+                set_all_valid_jumpdests.insert(pc);
             }
-        })
-        .collect();
+        }
+    }
 
     if output_handler.show_jump_dests {
         println!("all valid jumpdests: {:?}", &set_all_valid_jumpdests);

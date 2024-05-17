@@ -3,7 +3,6 @@ use itertools::Itertools;
 use lazy_static::lazy_static;
 use petgraph::dot::Dot;
 use petgraph::prelude::*;
-use revm::{opcode::*, Return};
 use std::{
     collections::{BTreeMap, HashMap},
     fmt::Debug,
@@ -231,64 +230,6 @@ impl<'main> CFGRunner<'main> {
             }
         }
         panic!("Could not find node for exit pc {pc}");
-    }
-
-    pub fn step(&mut self, pc: u16, op: u8) -> Return {
-        if self.last_node.is_none() {
-            self.last_node = Some(self.get_node_from_entry_pc(pc));
-        }
-        match op {
-            JUMP => self.jump(pc),
-
-            JUMPI => {
-                self.jumpi(pc);
-            }
-            JUMPDEST => self.jumpdest(pc),
-            _ => {
-                if self.get_node_from_pc(pc) != self.last_node.unwrap() {
-                    self.attach_new_edge(pc)
-                };
-            }
-        }
-        Return::Continue
-    }
-
-    pub fn attach_new_edge(&mut self, entry_pc: u16) {
-        let edge_to_use = self.default_edge_to_use();
-        let entering_node = self.get_node_from_entry_pc(entry_pc);
-        self.cfg_dag
-            .add_edge(self.last_node.unwrap(), entering_node, edge_to_use);
-        self.last_node = Some(entering_node);
-    }
-
-    pub fn default_edge_to_use(&mut self) -> Edges {
-        if self.jumpi_edge.is_some() {
-            let edge = self.jumpi_edge.unwrap();
-            self.jumpi_edge = None;
-            edge
-        } else {
-            Edges::Jump
-        }
-    }
-
-    pub fn jump(&mut self, pc: u16) {
-        // add in the jump node + prev edge
-        if self.get_node_from_pc(pc) != self.last_node.unwrap() {
-            self.attach_new_edge(pc)
-        };
-    }
-
-    pub fn jumpi(&mut self, pc: u16) {
-        if self.get_node_from_pc(pc) != self.last_node.unwrap() {
-            self.attach_new_edge(pc)
-        };
-    }
-
-    pub fn jumpdest(&mut self, pc: u16) {
-        // add in the jumpdest node + take from the prev edge
-        if self.get_node_from_pc(pc) != self.last_node.unwrap() {
-            self.attach_new_edge(pc)
-        };
     }
 
     pub fn cfg_dot_str_with_blocks(&mut self) -> String {
